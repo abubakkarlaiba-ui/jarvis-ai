@@ -272,19 +272,19 @@ class EmotionDetector:
 
         intensity = emotion.intensity
 
-        # High-intensity negative emotions need acknowledgment
-        if intensity > 0.6 and emotion.emotion in (
-            Emotion.FRUSTRATED, Emotion.ANGRY, Emotion.WORRIED, Emotion.ANXIOUS
-        ):
-            prefixes = [
-                "I understand this is frustrating.",
-                "I can see why that's concerning.",
-                "Let me help you resolve this.",
-                "I hear you. Let's address this.",
-            ]
-            import random
-            prefix = random.choice(prefixes)
-            response = f"{prefix} {response}"
+        # High-intensity negative emotions need acknowledgment (disabled in fallback mode)
+        # if intensity > 0.6 and emotion.emotion in (
+        #     Emotion.FRUSTRATED, Emotion.ANGRY, Emotion.WORRIED, Emotion.ANXIOUS
+        # ):
+        #     prefixes = [
+        #         "I understand this is frustrating.",
+        #         "I can see why that's concerning.",
+        #         "Let me help you resolve this.",
+        #         "I hear you. Let's address this.",
+        #     ]
+        #     import random
+        #     prefix = random.choice(prefixes)
+        #     response = f"{prefix} {response}"
 
         # Gratitude responses
         if emotion.emotion == Emotion.GRATEFUL:
@@ -296,9 +296,9 @@ class EmotionDetector:
             import random
             response = response.rstrip() + random.choice(suffixes)
 
-        # Confusion — offer to explain more
-        if emotion.emotion == Emotion.CONFUSED and intensity > 0.5:
-            response += "\n\nWould you like me to explain this in more detail or in a different way?"
+        # Confusion — offer to explain more (disabled in fallback mode)
+        # if emotion.emotion == Emotion.CONFUSED and intensity > 0.9:
+        #     response += "\n\nWould you like me to explain this in more detail?"
 
         # Excitement — match energy slightly
         if emotion.emotion == Emotion.EXCITED:

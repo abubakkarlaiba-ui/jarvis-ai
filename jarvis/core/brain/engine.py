@@ -518,6 +518,22 @@ class ReasoningEngine:
         hour = datetime.datetime.now().hour
         now = datetime.datetime.now()
 
+        # === INAPPROPRIATE CONTENT FILTER ===
+        bad_words = ["fuck", "shit", "ass", "damn", "bitch", "asshole", "dick", "cock", "pussy", " cunt"]
+        if any(w in lower for w in bad_words):
+            if any(w in lower for w in ["say", "repeat", "tell me", "speak"]):
+                return random.choice([
+                    f"I'm sorry, {name}, but I'm not programmed to use that kind of language.",
+                    f"That's not something I would say, {name}. I maintain a professional demeanor.",
+                    f"I'll have to decline, {name}. My vocabulary is strictly professional.",
+                ])
+            else:
+                return random.choice([
+                    f"I understand you may be frustrated, {name}. How can I help you constructively?",
+                    f"I'm here to help, {name}. Let's focus on something productive.",
+                    f"Noted, {name}. I'm ready to assist with any task you have in mind.",
+                ])
+
         # === GREETINGS ===
         if any(w in lower for w in ["hello", "hi", "hey", "greetings", "good morning", "good afternoon", "good evening"]):
             if hour < 12:
