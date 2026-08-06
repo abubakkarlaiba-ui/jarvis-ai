@@ -1,0 +1,318 @@
+{
+  "users": [
+    {
+      "id": "usr_001",
+      "username": "admin",
+      "email": "admin@jarvis.ai",
+      "password_hash": "pbkdf2:sha256:260000$abc123$def456",
+      "salt": "a1b2c3d4e5f6",
+      "roles": ["admin", "user"],
+      "is_active": true,
+      "created_at": "2026-01-01T00:00:00Z",
+      "last_login": "2026-08-05T10:30:00Z"
+    },
+    {
+      "id": "usr_002",
+      "username": "jarvis_user",
+      "email": "user@example.com",
+      "password_hash": "pbkdf2:sha256:260000$xyz789$uvw012",
+      "salt": "f6e5d4c3b2a1",
+      "roles": ["user"],
+      "is_active": true,
+      "created_at": "2026-02-15T14:00:00Z",
+      "last_login": "2026-08-04T08:15:00Z"
+    },
+    {
+      "id": "usr_003",
+      "username": "guest",
+      "email": "guest@example.com",
+      "password_hash": "pbkdf2:sha256:260000$guest$pass123",
+      "salt": "a9b8c7d6e5f4",
+      "roles": ["guest"],
+      "is_active": false,
+      "created_at": "2026-03-20T09:00:00Z",
+      "last_login": null
+    }
+  ],
+  "skills": [
+    {
+      "name": "calculator",
+      "version": "1.0.0",
+      "description": "Perform mathematical calculations",
+      "tags": ["math", "utility"],
+      "enabled": true,
+      "author": "JARVIS Team",
+      "config": {
+        "precision": 10,
+        "max_input_length": 500
+      }
+    },
+    {
+      "name": "weather",
+      "version": "2.1.0",
+      "description": "Get current weather and forecasts for any location",
+      "tags": ["weather", "api", "utility"],
+      "enabled": true,
+      "author": "JARVIS Team",
+      "config": {
+        "api_key_env": "WEATHER_API_KEY",
+        "default_units": "metric",
+        "cache_ttl": 1800
+      }
+    },
+    {
+      "name": "web_search",
+      "version": "1.5.0",
+      "description": "Search the web for information using multiple search engines",
+      "tags": ["search", "web", "research"],
+      "enabled": true,
+      "author": "JARVIS Team",
+      "config": {
+        "max_results": 10,
+        "safe_search": true,
+        "timeout": 30
+      }
+    },
+    {
+      "name": "email",
+      "version": "1.2.0",
+      "description": "Send and manage emails through configured providers",
+      "tags": ["email", "communication"],
+      "enabled": false,
+      "author": "JARVIS Team",
+      "config": {
+        "provider": "smtp",
+        "host_env": "EMAIL_HOST",
+        "max_attachments": 5
+      }
+    },
+    {
+      "name": "task_manager",
+      "version": "1.0.0",
+      "description": "Create, track, and manage tasks with priorities and deadlines",
+      "tags": ["productivity", "tasks", "organization"],
+      "enabled": true,
+      "author": "JARVIS Team",
+      "config": {
+        "default_priority": "medium",
+        "max_tasks": 1000,
+        "enable_notifications": true
+      }
+    }
+  ],
+  "workflows": [
+    {
+      "id": "wf_001",
+      "name": "Daily Briefing",
+      "description": "Generate a daily briefing with weather, news, and calendar",
+      "created_by": "usr_001",
+      "steps": [
+        {
+          "name": "fetch_weather",
+          "step_type": "api_call",
+          "command": "skill:weather --location=user.location",
+          "risk": "low",
+          "timeout": 30
+        },
+        {
+          "name": "fetch_news",
+          "step_type": "api_call",
+          "command": "skill:news --category=general --limit=5",
+          "risk": "low",
+          "timeout": 30,
+          "depends_on": []
+        },
+        {
+          "name": "fetch_calendar",
+          "step_type": "api_call",
+          "command": "skill:calendar --range=today",
+          "risk": "low",
+          "timeout": 15,
+          "depends_on": []
+        },
+        {
+          "name": "compile_briefing",
+          "step_type": "code",
+          "command": "compile_briefing(weather, news, calendar)",
+          "risk": "low",
+          "depends_on": ["fetch_weather", "fetch_news", "fetch_calendar"]
+        }
+      ],
+      "enabled": true,
+      "last_run": "2026-08-05T07:00:00Z"
+    },
+    {
+      "id": "wf_002",
+      "name": "Code Review Pipeline",
+      "description": "Automated code review with security scan and quality checks",
+      "created_by": "usr_001",
+      "steps": [
+        {
+          "name": "lint_code",
+          "step_type": "shell",
+          "command": "ruff check src/",
+          "risk": "low",
+          "timeout": 60
+        },
+        {
+          "name": "type_check",
+          "step_type": "shell",
+          "command": "mypy src/ --ignore-missing-imports",
+          "risk": "low",
+          "timeout": 120,
+          "depends_on": ["lint_code"]
+        },
+        {
+          "name": "security_scan",
+          "step_type": "shell",
+          "command": "bandit -r src/ -f json",
+          "risk": "medium",
+          "timeout": 180,
+          "depends_on": ["lint_code"]
+        },
+        {
+          "name": "run_tests",
+          "step_type": "shell",
+          "command": "pytest tests/ -v --tb=short",
+          "risk": "medium",
+          "timeout": 300,
+          "depends_on": ["type_check", "security_scan"]
+        }
+      ],
+      "enabled": true,
+      "last_run": null
+    }
+  ],
+  "messages": [
+    {
+      "id": "msg_001",
+      "role": "user",
+      "content": "What's the weather like in London?",
+      "timestamp": "2026-08-05T10:00:00Z",
+      "session_id": "sess_001",
+      "metadata": {
+        "source": "chat",
+        "tokens_used": 12
+      }
+    },
+    {
+      "id": "msg_002",
+      "role": "assistant",
+      "content": "The current weather in London is 18°C with partly cloudy skies. There's a 20% chance of rain this afternoon.",
+      "timestamp": "2026-08-05T10:00:05Z",
+      "session_id": "sess_001",
+      "metadata": {
+        "source": "weather_skill",
+        "tokens_used": 45,
+        "model": "gpt-4o"
+      }
+    },
+    {
+      "id": "msg_003",
+      "role": "user",
+      "content": "Set a timer for 10 minutes",
+      "timestamp": "2026-08-05T10:02:00Z",
+      "session_id": "sess_001",
+      "metadata": {
+        "source": "chat",
+        "tokens_used": 8
+      }
+    },
+    {
+      "id": "msg_004",
+      "role": "assistant",
+      "content": "Timer set for 10 minutes. I'll notify you when it's done.",
+      "timestamp": "2026-08-05T10:02:02Z",
+      "session_id": "sess_001",
+      "metadata": {
+        "source": "timer_skill",
+        "tokens_used": 20,
+        "model": "gpt-4o"
+      }
+    },
+    {
+      "id": "msg_005",
+      "role": "user",
+      "content": "Can you help me write a Python function to sort a list?",
+      "timestamp": "2026-08-05T10:05:00Z",
+      "session_id": "sess_002",
+      "metadata": {
+        "source": "chat",
+        "tokens_used": 15
+      }
+    },
+    {
+      "id": "msg_006",
+      "role": "assistant",
+      "content": "Of course! Here's a Python function to sort a list:\n\n```python\ndef sort_list(lst, reverse=False, key=None):\n    return sorted(lst, reverse=reverse, key=key)\n```\n\nYou can use it like:\n- `sort_list([3, 1, 2])` → `[1, 2, 3]`\n- `sort_list([3, 1, 2], reverse=True)` → `[3, 2, 1]`",
+      "timestamp": "2026-08-05T10:05:03Z",
+      "session_id": "sess_002",
+      "metadata": {
+        "source": "reasoning_engine",
+        "tokens_used": 95,
+        "model": "gpt-4o"
+      }
+    }
+  ],
+  "memory_entries": [
+    {
+      "id": "mem_001",
+      "key": "user_preference:theme",
+      "value": "dark",
+      "category": "preferences",
+      "created_at": "2026-01-15T10:00:00Z",
+      "accessed_at": "2026-08-05T10:00:00Z",
+      "ttl": null
+    },
+    {
+      "id": "mem_002",
+      "key": "user_preference:location",
+      "value": "London, UK",
+      "category": "preferences",
+      "created_at": "2026-02-01T12:00:00Z",
+      "accessed_at": "2026-08-05T10:00:00Z",
+      "ttl": null
+    },
+    {
+      "id": "mem_003",
+      "key": "context:recent_topic",
+      "value": "Python web development with FastAPI",
+      "category": "context",
+      "created_at": "2026-08-05T09:00:00Z",
+      "accessed_at": "2026-08-05T10:00:00Z",
+      "ttl": 3600
+    },
+    {
+      "id": "mem_004",
+      "key": "fact:jarvis_version",
+      "value": "2.0.0",
+      "category": "facts",
+      "created_at": "2026-01-01T00:00:00Z",
+      "accessed_at": "2026-08-04T15:00:00Z",
+      "ttl": null
+    },
+    {
+      "id": "mem_005",
+      "key": "skill_cache:weather:London",
+      "value": {
+        "temperature": 18,
+        "condition": "partly_cloudy",
+        "humidity": 65,
+        "wind_speed": 12
+      },
+      "category": "cache",
+      "created_at": "2026-08-05T10:00:05Z",
+      "accessed_at": "2026-08-05T10:00:05Z",
+      "ttl": 1800
+    },
+    {
+      "id": "mem_006",
+      "key": "conversation:summary:sess_001",
+      "value": "User asked about London weather and set a 10-minute timer. Weather was 18°C partly cloudy.",
+      "category": "summaries",
+      "created_at": "2026-08-05T10:10:00Z",
+      "accessed_at": "2026-08-05T10:10:00Z",
+      "ttl": 86400
+    }
+  ]
+}

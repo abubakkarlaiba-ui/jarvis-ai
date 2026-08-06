@@ -1,0 +1,48 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--tb=short",
+    "-q",
+    "--color=yes",
+]
+markers = [
+    "unit: Unit tests (fast, isolated)",
+    "integration: Integration tests (slower, uses mocks)",
+    "e2e: End-to-end tests (full pipeline)",
+    "voice: Voice pipeline tests",
+    "automation: Automation tests",
+    "ui: UI tests (browser)",
+    "performance: Performance benchmarks",
+    "slow: Slow tests",
+    "security: Security tests",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]
+
+[tool.coverage.run]
+source = ["jarvis"]
+omit = [
+    "tests/*",
+    "jarvis/ui/*",
+    "*/migrations/*",
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+fail_under = 70
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if __name__ == .__main__.",
+    "raise NotImplementedError",
+    "pass",
+    "except ImportError",
+]

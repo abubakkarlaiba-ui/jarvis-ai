@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JARVIS — AI Assistant</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Ambient background -->
+    <div class="ambient-bg">
+        <div class="grid-overlay"></div>
+        <div class="particle-field" id="particles"></div>
+        <div class="scan-line"></div>
+    </div>
+
+    <!-- Top bar -->
+    <header class="top-bar" role="banner">
+        <div class="top-bar__left">
+            <div class="logo" aria-label="JARVIS">
+                <svg class="logo__icon" viewBox="0 0 40 40" width="40" height="40">
+                    <circle cx="20" cy="20" r="18" fill="none" stroke="var(--neon)" stroke-width="1.5" opacity="0.6"/>
+                    <circle cx="20" cy="20" r="12" fill="none" stroke="var(--neon)" stroke-width="1"/>
+                    <circle cx="20" cy="20" r="3" fill="var(--neon)"/>
+                    <line x1="20" y1="2" x2="20" y2="8" stroke="var(--neon)" stroke-width="1"/>
+                    <line x1="20" y1="32" x2="20" y2="38" stroke="var(--neon)" stroke-width="1"/>
+                    <line x1="2" y1="20" x2="8" y2="20" stroke="var(--neon)" stroke-width="1"/>
+                    <line x1="32" y1="20" x2="38" y2="20" stroke="var(--neon)" stroke-width="1"/>
+                </svg>
+                <span class="logo__text">JARVIS</span>
+                <span class="logo__version" id="version">v2.0</span>
+            </div>
+        </div>
+        <div class="top-bar__center">
+            <div class="status-indicator" id="statusIndicator" role="status" aria-live="polite">
+                <span class="status-indicator__dot"></span>
+                <span class="status-indicator__text">Systems Online</span>
+            </div>
+        </div>
+        <div class="top-bar__right">
+            <button class="icon-btn" id="themeToggle" aria-label="Toggle theme" title="Toggle theme (T)">
+                <svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z" fill="currentColor"/></svg>
+            </button>
+            <button class="icon-btn" id="fullscreenBtn" aria-label="Fullscreen" title="Fullscreen (F)">
+                <svg viewBox="0 0 24 24" width="20" height="20"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z" fill="currentColor"/></svg>
+            </button>
+            <button class="icon-btn" id="settingsBtn" aria-label="Settings" title="Settings (Ctrl+,)">
+                <svg viewBox="0 0 24 24" width="20" height="20"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2z" fill="currentColor"/></svg>
+            </button>
+            <span class="clock" id="clock" aria-live="off"></span>
+        </div>
+    </header>
+
+    <!-- Main layout -->
+    <main class="main-layout" role="main">
+        <!-- Left panel: System Monitor -->
+        <section class="panel panel--system" id="systemPanel" aria-label="System Monitor">
+            <div class="panel__header">
+                <h2 class="panel__title">SYSTEM</h2>
+                <button class="panel__collapse" aria-label="Collapse panel" data-panel="system">−</button>
+            </div>
+            <div class="panel__body">
+                <div class="monitor-grid">
+                    <!-- CPU -->
+                    <div class="monitor-card" role="meter" aria-label="CPU Usage" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                        <div class="monitor-card__ring">
+                            <svg viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="42" fill="none" stroke="var(--glass-border)" stroke-width="6"/>
+                                <circle cx="50" cy="50" r="42" fill="none" stroke="var(--neon)" stroke-width="6" stroke-dasharray="264" stroke-dashoffset="264" stroke-linecap="round" class="progress-ring" data-target="cpu"/>
+                            </svg>
+                            <span class="monitor-card__value" id="cpuValue">0%</span>
+                        </div>
+                        <span class="monitor-card__label">CPU</span>
+                        <span class="monitor-card__detail" id="cpuDetail">— cores</span>
+                    </div>
+                    <!-- RAM -->
+                    <div class="monitor-card" role="meter" aria-label="RAM Usage" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                        <div class="monitor-card__ring">
+                            <svg viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="42" fill="none" stroke="var(--glass-border)" stroke-width="6"/>
+                                <circle cx="50" cy="50" r="42" fill="none" stroke="var(--neon-alt)" stroke-width="6" stroke-dasharray="264" stroke-dashoffset="264" stroke-linecap="round" class="progress-ring" data-target="ram"/>
+                            </svg>
+                            <span class="monitor-card__value" id="ramValue">0%</span>
+                        </div>
+                        <span class="monitor-card__label">RAM</span>
+                        <span class="monitor-card__detail" id="ramDetail">— GB</span>
+                    </div>
+                    <!-- GPU -->
+                    <div class="monitor-card" role="meter" aria-label="GPU Usage" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                        <div class="monitor-card__ring">
+                            <svg viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="42" fill="none" stroke="var(--glass-border)" stroke-width="6"/>
+                                <circle cx="50" cy="50" r="42" fill="none" stroke="var(--neon-green)" stroke-width="6" stroke-dasharray="264" stroke-dashoffset="264" stroke-linecap="round" class="progress-ring" data-target="gpu"/>
+                            </svg>
+                            <span class="monitor-card__value" id="gpuValue">0%</span>
+                        </div>
+                        <span class="monitor-card__label">GPU</span>
+                        <span class="monitor-card__detail" id="gpuDetail">—</span>
+                    </div>
+                    <!-- Network -->
+                    <div class="monitor-card" role="meter" aria-label="Network Usage">
+                        <div class="monitor-card__ring">
+                            <svg viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="42" fill="none" stroke="var(--glass-border)" stroke-width="6"/>
+                                <circle cx="50" cy="50" r="42" fill="none" stroke="var(--neon-purple)" stroke-width="6" stroke-dasharray="264" stroke-dashoffset="264" stroke-linecap="round" class="progress-ring" data-target="net"/>
+                            </svg>
+                            <span class="monitor-card__value" id="netValue">0</span>
+                        </div>
+                        <span class="monitor-card__label">NET</span>
+                        <span class="monitor-card__detail" id="netDetail">↓ 0 ↑ 0 Mbps</span>
+                    </div>
+                </div>
+                <!-- Mini sparkline charts -->
+                <div class="sparkline-row">
+                    <canvas id="cpuSparkline" width="200" height="40" aria-label="CPU history chart"></canvas>
+                    <canvas id="ramSparkline" width="200" height="40" aria-label="RAM history chart"></canvas>
+                </div>
+                <div class="system-info" id="systemInfo">
+                    <div class="system-info__row"><span>OS</span><span id="osInfo">—</span></div>
+                    <div class="system-info__row"><span>Uptime</span><span id="uptimeInfo">—</span></div>
+                    <div class="system-info__row"><span>Processes</span><span id="processInfo">—</span></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Center: Chat -->
+        <section class="panel panel--chat" id="chatPanel" aria-label="Chat">
+            <div class="panel__header">
+                <h2 class="panel__title">CHAT</h2>
+                <div class="panel__header-actions">
+                    <button class="icon-btn icon-btn--sm" id="clearChat" aria-label="Clear chat" title="Clear chat">
+                        <svg viewBox="0 0 24 24" width="16" height="16"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" fill="currentColor"/></svg>
+                    </button>
+                </div>
+            </div>
+            <div class="chat-messages" id="chatMessages" role="log" aria-live="polite" aria-label="Chat messages">
+                <div class="chat-welcome" id="chatWelcome">
+                    <div class="chat-welcome__icon">
+                        <svg viewBox="0 0 60 60" width="60" height="60">
+                            <circle cx="30" cy="30" r="28" fill="none" stroke="var(--neon)" stroke-width="1" opacity="0.4"/>
+                            <circle cx="30" cy="30" r="20" fill="none" stroke="var(--neon)" stroke-width="0.5" opacity="0.3"/>
+                            <circle cx="30" cy="30" r="4" fill="var(--neon)" opacity="0.8"/>
+                        </svg>
+                    </div>
+                    <h3>J.A.R.V.I.S.</h3>
+                    <p>Just A Rather Very Intelligent System</p>
+                    <p class="chat-welcome__hint">Type a message or press <kbd>Space</kbd> to talk</p>
+                </div>
+            </div>
+            <div class="chat-input-area">
+                <div class="chat-input-wrapper">
+                    <textarea id="chatInput" class="chat-input" placeholder="Ask me anything..." rows="1" aria-label="Message input" autocomplete="off"></textarea>
+                    <button class="chat-send" id="chatSend" aria-label="Send message" title="Send (Enter)">
+                        <svg viewBox="0 0 24 24" width="20" height="20"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" fill="currentColor"/></svg>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Right panel: Tasks & Notifications -->
+        <section class="panel panel--tasks" id="tasksPanel" aria-label="Tasks and Notifications">
+            <div class="panel__header">
+                <h2 class="panel__title">TASKS</h2>
+                <button class="panel__collapse" aria-label="Collapse panel" data-panel="tasks">−</button>
+            </div>
+            <div class="panel__body">
+                <div class="task-tabs" role="tablist">
+                    <button class="task-tab active" role="tab" data-tab="queue" aria-selected="true">Queue</button>
+                    <button class="task-tab" role="tab" data-tab="workflows" aria-selected="false">Workflows</button>
+                    <button class="task-tab" role="tab" data-tab="skills" aria-selected="false">Skills</button>
+                </div>
+                <div class="task-content" id="taskContent" role="tabpanel">
+                    <div class="task-list" id="taskQueue">
+                        <div class="task-empty">No tasks in queue</div>
+                    </div>
+                    <div class="task-list hidden" id="workflowList">
+                        <div class="task-empty">No active workflows</div>
+                    </div>
+                    <div class="task-list hidden" id="skillList"></div>
+                </div>
+                <!-- Notifications -->
+                <div class="notifications-section">
+                    <h3 class="section-title">NOTIFICATIONS</h3>
+                    <div class="notification-list" id="notificationList" role="log" aria-live="polite"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Voice section -->
+    <footer class="voice-bar" role="region" aria-label="Voice controls">
+        <div class="voice-waveform" id="voiceWaveform">
+            <canvas id="waveformCanvas" width="600" height="60" aria-label="Voice waveform"></canvas>
+        </div>
+        <button class="mic-btn" id="micBtn" aria-label="Toggle microphone" title="Toggle microphone (Space)">
+            <svg class="mic-btn__icon" viewBox="0 0 24 24" width="28" height="28">
+                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" fill="currentColor"/>
+                <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" fill="currentColor"/>
+            </svg>
+            <div class="mic-btn__pulse"></div>
+        </button>
+        <div class="voice-status" id="voiceStatus">
+            <span class="voice-status__text">Click microphone or press Space to speak</span>
+        </div>
+    </footer>
+
+    <!-- Notification toast container -->
+    <div class="toast-container" id="toastContainer" role="alert" aria-live="assertive"></div>
+
+    <!-- Keyboard shortcuts overlay -->
+    <div class="shortcuts-overlay hidden" id="shortcutsOverlay" role="dialog" aria-label="Keyboard shortcuts">
+        <div class="shortcuts-panel glass-panel">
+            <h2>Keyboard Shortcuts</h2>
+            <div class="shortcuts-grid">
+                <div class="shortcut"><kbd>Space</kbd><span>Toggle microphone</span></div>
+                <div class="shortcut"><kbd>Enter</kbd><span>Send message</span></div>
+                <div class="shortcut"><kbd>Shift+Enter</kbd><span>New line in input</span></div>
+                <div class="shortcut"><kbd>Ctrl+K</kbd><span>Quick command</span></div>
+                <div class="shortcut"><kbd>Ctrl+/</kbd><span>Toggle shortcuts</span></div>
+                <div class="shortcut"><kbd>T</kbd><span>Toggle theme</span></div>
+                <div class="shortcut"><kbd>F</kbd><span>Toggle fullscreen</span></div>
+                <div class="shortcut"><kbd>1-3</kbd><span>Switch task tabs</span></div>
+                <div class="shortcut"><kbd>Escape</kbd><span>Close overlays</span></div>
+            </div>
+            <button class="btn btn--ghost" id="closeShortcuts">Close</button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/static/js/core.js"></script>
+    <script src="/static/js/voice.js"></script>
+    <script src="/static/js/system.js"></script>
+    <script src="/static/js/chat.js"></script>
+    <script src="/static/js/tasks.js"></script>
+    <script src="/static/js/notifications.js"></script>
+    <script src="/static/js/panels.js"></script>
+    <script src="/static/js/keyboard.js"></script>
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
