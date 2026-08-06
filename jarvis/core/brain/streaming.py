@@ -55,25 +55,43 @@ class StreamMetrics:
 class StreamingGenerator:
     """Generates streaming responses from the LLM.
 
-    Handles the connection to the LLM API, manages streaming state,
-    and yields incremental tokens as they arrive.
-
-    Example:
-        generator = StreamingGenerator(settings)
-        async for chunk in generator.stream(messages, tools=tool_schemas):
-            print(chunk.delta, end="", flush=True)
+    Supports Google Gemini (free tier) and OpenAI-compatible APIs.
     """
 
     def __init__(self, settings: AISettings):
         self._settings = settings
         self._client = None
+        self._gemini_model = None
         self._initialized = False
+        self._provider = settings.provider
 
     async def initialize(self) -> None:
         """Initialize the LLM client."""
         if self._initialized:
             return
 
+        # Try Gemini first (free tier available)
+        if self._provider == "gemini" or (not self._provider and self._settings.api_key):
+            try:
+                import google.generativeai as genai
+                genai.configure(api_key=self._settings.api_key)
+                self._gemini_model = genai.GenerativeModel(
+                    model_name=self._settings.model or "gemini-2.0-flash",
+                    generation_config=genai.GenerationConfig(
+                        temperature=self._settings.temperature,
+                        max_output_tokens=self._settings.max_tokens,
+                    ),
+                )
+                self._initialized = True
+                self._provider = "gemini"
+                logger.info("StreamingGenerator initialized (provider=gemini, model=%s)", self._settings.model or "gemini-2.0-flash")
+                return
+            except ImportError:
+                logger.warning("google-generativeai not installed, trying OpenAI")
+            except Exception as exc:
+                logger.warning("Failed to init Gemini: %s, trying OpenAI", exc)
+
+        # Fallback to OpenAI
         try:
             from openai import AsyncOpenAI
             kwargs = {"api_key": self._settings.api_key}
@@ -81,9 +99,10 @@ class StreamingGenerator:
                 kwargs["base_url"] = self._settings.base_url
             self._client = AsyncOpenAI(**kwargs)
             self._initialized = True
-            logger.info("StreamingGenerator initialized (provider=%s)", self._settings.provider)
+            self._provider = "openai"
+            logger.info("StreamingGenerator initialized (provider=openai)")
         except ImportError:
-            logger.error("openai package not installed")
+            logger.error("No LLM provider available (install google-generativeai or openai)")
         except Exception as exc:
             logger.error("Failed to initialize StreamingGenerator: %s", exc)
 
@@ -95,35 +114,97 @@ class StreamingGenerator:
         temperature: float | None = None,
         max_tokens: int | None = None,
     ) -> AsyncIterator[StreamChunk]:
-        """Stream a response from the LLM.
-
-        Args:
-            messages: Conversation messages in OpenAI format.
-            tools: Tool schemas for function calling.
-            model: Model override.
-            temperature: Temperature override.
-            max_tokens: Max tokens override.
-
-        Yields:
-            StreamChunk objects with incremental text.
-        """
+        """Stream a response from the LLM."""
         if not self._initialized:
             await self.initialize()
 
-        if not self._client:
-            # Fallback: yield a placeholder
+        if not self._client and not self._gemini_model:
             yield StreamChunk(text="[LLM not available]", delta="[LLM not available]", finish_reason="error")
             return
 
+        # Gemini streaming
+        if self._provider == "gemini" and self._gemini_model:
+            async for chunk in self._stream_gemini(messages, model, temperature, max_tokens):
+                yield chunk
+            return
+
+        # OpenAI streaming
+        async for chunk in self._stream_openai(messages, tools, model, temperature, max_tokens):
+            yield chunk
+
+    async def _stream_gemini(
+        self,
+        messages: list[dict[str, Any]],
+        model: str | None = None,
+        temperature: float | None = None,
+        max_tokens: int | None = None,
+    ) -> AsyncIterator[StreamChunk]:
+        """Stream from Google Gemini."""
+        import asyncio
+
+        # Convert OpenAI message format to Gemini format
+        system_msg = ""
+        chat_history = []
+        for msg in messages:
+            if msg["role"] == "system":
+                system_msg += msg["content"] + "\n"
+            elif msg["role"] == "user":
+                chat_history.append({"role": "user", "parts": [msg["content"]]})
+            elif msg["role"] == "assistant":
+                chat_history.append({"role": "model", "parts": [msg["content"]]})
+
+        # Prepend system message to first user message if exists
+        if system_msg and chat_history:
+            chat_history[0]["parts"][0] = system_msg + "\n" + chat_history[0]["parts"][0]
+        elif system_msg:
+            chat_history.append({"role": "user", "parts": [system_msg]})
+
+        if not chat_history:
+            yield StreamChunk(text="No input provided.", delta="No input provided.", finish_reason="stop")
+            return
+
+        try:
+            # Use the model's generate_content with streaming
+            response = self._gemini_model.generate_content(
+                chat_history,
+                stream=True,
+            )
+
+            full_text = ""
+            for chunk in response:
+                if chunk.text:
+                    full_text += chunk.text
+                    yield StreamChunk(
+                        text=full_text,
+                        delta=chunk.text,
+                        finish_reason=None,
+                    )
+
+            yield StreamChunk(
+                text=full_text,
+                delta="",
+                finish_reason="stop",
+            )
+
+        except Exception as exc:
+            logger.error("Gemini streaming error: %s", exc)
+            yield StreamChunk(text=f"Error: {exc}", delta=f"Error: {exc}", finish_reason="error")
+
+    async def _stream_openai(
+        self,
+        messages: list[dict[str, Any]],
+        tools: list[dict] | None = None,
+        model: str | None = None,
+        temperature: float | None = None,
+        max_tokens: int | None = None,
+    ) -> AsyncIterator[StreamChunk]:
+        """Stream from OpenAI-compatible API."""
         model = model or self._settings.model
         temperature = temperature if temperature is not None else self._settings.temperature
         max_tokens = max_tokens or self._settings.max_tokens
 
-        start_time = time.perf_counter()
-        first_token_time = 0.0
         full_text = ""
         all_tool_calls = []
-        token_count = 0
 
         try:
             kwargs = {
@@ -133,46 +214,28 @@ class StreamingGenerator:
                 "max_tokens": max_tokens,
                 "stream": True,
             }
-
             if tools:
                 kwargs["tools"] = tools
                 kwargs["tool_choice"] = "auto"
 
             response = await self._client.chat.completions.create(**kwargs)
-
             accumulated_tool_calls: dict[int, dict] = {}
 
             async for event in response:
                 if not event.choices:
                     continue
-
                 choice = event.choices[0]
                 delta = choice.delta
 
-                # Handle text content
                 if delta.content:
-                    if first_token_time == 0:
-                        first_token_time = time.perf_counter() - start_time
-
                     full_text += delta.content
-                    token_count += 1
+                    yield StreamChunk(text=full_text, delta=delta.content, index=choice.index)
 
-                    yield StreamChunk(
-                        text=full_text,
-                        delta=delta.content,
-                        index=choice.index,
-                    )
-
-                # Handle tool calls (streaming)
                 if delta.tool_calls:
                     for tc in delta.tool_calls:
                         idx = tc.index
                         if idx not in accumulated_tool_calls:
-                            accumulated_tool_calls[idx] = {
-                                "id": tc.id or "",
-                                "type": "function",
-                                "function": {"name": "", "arguments": ""},
-                            }
+                            accumulated_tool_calls[idx] = {"id": tc.id or "", "type": "function", "function": {"name": "", "arguments": ""}}
                         if tc.id:
                             accumulated_tool_calls[idx]["id"] = tc.id
                         if tc.function:
@@ -181,41 +244,14 @@ class StreamingGenerator:
                             if tc.function.arguments:
                                 accumulated_tool_calls[idx]["function"]["arguments"] += tc.function.arguments
 
-                # Handle finish
                 if choice.finish_reason:
-                    # Finalize tool calls
                     if accumulated_tool_calls:
                         all_tool_calls = list(accumulated_tool_calls.values())
-
-                    yield StreamChunk(
-                        text=full_text,
-                        delta="",
-                        finish_reason=choice.finish_reason,
-                        tool_calls=all_tool_calls if all_tool_calls else None,
-                        usage=getattr(event, "usage", None),
-                        index=choice.index,
-                    )
+                    yield StreamChunk(text=full_text, delta="", finish_reason=choice.finish_reason, tool_calls=all_tool_calls if all_tool_calls else None)
 
         except Exception as exc:
-            elapsed = (time.perf_counter() - start_time) * 1000
-            logger.error("Streaming failed after %.1fms: %s", elapsed, exc)
-            yield StreamChunk(
-                text=full_text or f"[Error: {exc}]",
-                delta=f"[Error: {exc}]",
-                finish_reason="error",
-            )
-
-        # Log metrics
-        total_ms = (time.perf_counter() - start_time) * 1000
-        tps = token_count / (total_ms / 1000) if total_ms > 0 else 0
-
-        logger.info(
-            "Stream complete: %d tokens in %.0fms (%.1f tokens/s, first_token=%.0fms)",
-            token_count,
-            total_ms,
-            tps,
-            first_token_time * 1000,
-        )
+            logger.error("OpenAI streaming error: %s", exc)
+            yield StreamChunk(text=f"Error: {exc}", delta=f"Error: {exc}", finish_reason="error")
 
     async def generate(
         self,
@@ -225,20 +261,7 @@ class StreamingGenerator:
         temperature: float | None = None,
         max_tokens: int | None = None,
     ) -> tuple[str, list[dict], StreamMetrics]:
-        """Generate a complete response (non-streaming wrapper).
-
-        Collects all streaming chunks into a final response.
-
-        Args:
-            messages: Conversation messages.
-            tools: Tool schemas.
-            model: Model override.
-            temperature: Temperature override.
-            max_tokens: Max tokens override.
-
-        Returns:
-            Tuple of (full_text, tool_calls, metrics).
-        """
+        """Generate a complete response (non-streaming wrapper)."""
         metrics = StreamMetrics()
         start = time.perf_counter()
         first_token = 0.0
@@ -267,4 +290,5 @@ class StreamingGenerator:
     async def cleanup(self) -> None:
         """Release resources."""
         self._client = None
+        self._gemini_model = None
         self._initialized = False

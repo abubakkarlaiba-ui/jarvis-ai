@@ -20,7 +20,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Optional
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings
 
 
@@ -31,9 +31,9 @@ class AISettings(BaseSettings):
     """AI/LLM provider configuration."""
     model_config = {"env_prefix": "AI_"}
 
-    provider: str = Field(default="openai", description="AI provider: openai, local, anthropic")
-    model: str = Field(default="gpt-4", description="Model identifier")
-    api_key: Optional[str] = Field(default=None, description="API key for the AI provider")
+    provider: str = Field(default="gemini", description="AI provider: gemini, openai, local, anthropic")
+    model: str = Field(default="gemini-2.0-flash", description="Model identifier")
+    api_key: Optional[str] = Field(default=None, description="API key (GEMINI_API_KEY or OPENAI_API_KEY)")
     temperature: float = Field(default=0.7, ge=0.0, le=2.0)
     max_tokens: int = Field(default=4096, ge=1)
     embedding_model: str = Field(default="text-embedding-3-small")
@@ -412,6 +412,26 @@ class Settings(BaseSettings):
     browser: BrowserSettings = Field(default_factory=BrowserSettings)
     api: APISettings = Field(default_factory=APISettings)
     logging: LoggingSettings = Field(default_factory=LoggingSettings)
+
+    @model_validator(mode="after")
+    def resolve_api_key(self) -> "Settings":
+        """Resolve API key from various environment variables."""
+        import os
+        # Check GEMINI_API_KEY first
+        if not self.ai.api_key:
+            gemini_key = os.environ.get("GEMINI_API_KEY")
+            if gemini_key:
+                self.ai.api_key = gemini_key
+                self.ai.provider = "gemini"
+                self.ai.model = self.ai.model or "gemini-2.0-flash"
+            else:
+                # Fall back to OPENAI_API_KEY
+                openai_key = os.environ.get("OPENAI_API_KEY")
+                if openai_key:
+                    self.ai.api_key = openai_key
+                    self.ai.provider = "openai"
+                    self.ai.model = self.ai.model or "gpt-4"
+        return self
 
 
 @lru_cache
