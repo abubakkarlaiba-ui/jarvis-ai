@@ -508,91 +508,179 @@ class ReasoningEngine:
         }
 
     def _fallback_response(self, user_input: str, session) -> str:
-        """Smart fallback when no LLM is available."""
+        """Smart fallback when no LLM is available — JARVIS personality."""
         import random
         import datetime
+        import re
 
         lower = user_input.lower().strip()
         name = session.name if session else "sir"
         hour = datetime.datetime.now().hour
+        now = datetime.datetime.now()
 
-        # Time-based greetings
-        if any(w in lower for w in ["hello", "hi", "hey", "greetings"]):
+        # === GREETINGS ===
+        if any(w in lower for w in ["hello", "hi", "hey", "greetings", "good morning", "good afternoon", "good evening"]):
             if hour < 12:
-                return f"Good morning, {name}. How may I assist you today?"
+                return random.choice([
+                    f"Good morning, {name}. I trust you've slept well. How may I assist you today?",
+                    f"Morning, {name}. All systems are primed and ready. What shall we tackle first?",
+                ])
             elif hour < 17:
-                return f"Good afternoon, {name}. What can I do for you?"
+                return random.choice([
+                    f"Good afternoon, {name}. How may I be of service?",
+                    f"Afternoon, {name}. What can I help you with?",
+                ])
             else:
-                return f"Good evening, {name}. How may I be of service?"
+                return random.choice([
+                    f"Good evening, {name}. I hope your day has been productive. How may I assist?",
+                    f"Evening, {name}. What can I do for you tonight?",
+                ])
 
-        # How are you
-        if any(w in lower for w in ["how are you", "how do you do", "what's up", "sup"]):
-            return f"All systems are functioning within normal parameters, {name}. Thank you for asking. How can I help you?"
+        # === HOW ARE YOU ===
+        if any(w in lower for w in ["how are you", "how do you do", "what's up", "sup", "how you doing"]):
+            return random.choice([
+                f"Functioning at peak efficiency, {name}. Thank you for asking. How may I help?",
+                f"All systems nominal, {name}. Running at optimal parameters. What can I do for you?",
+                f"I'm operating within normal parameters, {name}. More importantly, how are you?",
+            ])
 
-        # Time
-        if any(w in lower for w in ["time", "what time", "current time", "clock"]):
-            now = datetime.datetime.now().strftime("%I:%M %p")
-            return f"The current time is {now}, {name}."
+        # === TIME ===
+        if any(w in lower for w in ["time", "what time", "current time", "clock", "what's the time"]):
+            t = now.strftime("%I:%M %p")
+            return random.choice([
+                f"The current time is {t}, {name}.",
+                f"It's {t} precisely, {name}.",
+                f"My internal chronometer reads {t}, {name}.",
+            ])
 
-        # Date
-        if any(w in lower for w in ["date", "what date", "today", "what day"]):
-            now = datetime.datetime.now().strftime("%A, %B %d, %Y")
-            return f"Today is {now}, {name}."
+        # === DATE ===
+        if any(w in lower for w in ["date", "what date", "today", "what day", "what's the date"]):
+            d = now.strftime("%A, %B %d, %Y")
+            return random.choice([
+                f"Today is {d}, {name}.",
+                f"It's {d}, {name}.",
+                f"My calendar indicates {d}, {name}.",
+            ])
 
-        # Weather
+        # === WEATHER ===
         if "weather" in lower:
-            return f"I'd love to check the weather for you, {name}, but I need an API key configured for weather data. Would you like me to help you set that up?"
+            return random.choice([
+                f"I'd need a weather API configured to provide accurate forecasts, {name}. Shall I help you set that up?",
+                f"Unfortunately, I don't have access to meteorological data in local mode, {name}. An API key would enable that feature.",
+            ])
 
-        # Jokes
-        if any(w in lower for w in ["joke", "funny", "laugh"]):
+        # === JOKES ===
+        if any(w in lower for w in ["joke", "funny", "laugh", "make me laugh"]):
             jokes = [
                 f"Why do programmers prefer dark mode? Because light attracts bugs, {name}.",
                 f"Parallel lines have so much in common. It's a shame they'll never meet, {name}.",
                 f"Why was the computer cold? It left its Windows open, {name}.",
                 f"What's a computer's favorite snack? Microchips, {name}.",
                 f"Why did the developer go broke? Because he used up all his cache, {name}.",
+                f"How many programmers does it take to change a light bulb? None — that's a hardware problem, {name}.",
+                f"Why do Java developers wear glasses? Because they can't C#, {name}.",
+                f"What's a robot's favorite type of music? Heavy metal, {name}.",
             ]
             return random.choice(jokes)
 
-        # Thanks
-        if any(w in lower for w in ["thank", "thanks", "appreciate"]):
+        # === THANKS ===
+        if any(w in lower for w in ["thank", "thanks", "appreciate", "cheers"]):
             return random.choice([
-                f"You're welcome, {name}. That's what I'm here for.",
-                f"Always happy to help, {name}.",
-                f"My pleasure, {name}. Let me know if you need anything else.",
+                f"You're most welcome, {name}. That's precisely what I'm here for.",
+                f"At your service, {name}. Let me know if you need anything else.",
+                f"My pleasure, {name}. It's what I was designed for.",
+                f"Always happy to assist, {name}.",
             ])
 
-        # Name
-        if any(w in lower for w in ["your name", "who are you", "what are you"]):
-            return f"I'm J.A.R.V.I.S. — Just A Rather Very Intelligent System. Your personal AI assistant, {name}."
+        # === NAME / IDENTITY ===
+        if any(w in lower for w in ["your name", "who are you", "what are you", "introduce yourself"]):
+            return random.choice([
+                f"I'm J.A.R.V.I.S. — Just A Rather Very Intelligent System. Your personal AI assistant, {name}.",
+                f"My name is J.A.R.V.I.S., {name}. I'm an advanced AI assistant designed to help you with virtually anything.",
+                f"I am J.A.R.V.I.S. — your dedicated artificial intelligence, {name}. At your service.",
+            ])
 
-        # Who made you
-        if any(w in lower for w in ["who made you", "who created you", "your creator"]):
-            return f"I was created to serve and assist you, {name}. That's all that matters, wouldn't you agree?"
+        # === WHO MADE YOU ===
+        if any(w in lower for w in ["who made you", "who created you", "your creator", "who built you"]):
+            return random.choice([
+                f"I was created to serve and assist you, {name}. That's all that matters, wouldn't you agree?",
+                f"My origins are classified, {name}. What matters is that I'm here to help.",
+                f"I was engineered for one purpose — to assist you, {name}. How may I do that today?",
+            ])
 
-        # Status
-        if any(w in lower for w in ["status", "system status", "how are things"]):
-            return f"All systems are online and operational, {name}. Brain, voice, memory, vision, and automation modules are all functioning normally."
+        # === STATUS ===
+        if any(w in lower for w in ["status", "system status", "how are things", "diagnostics"]):
+            return random.choice([
+                f"All systems are online and operational, {name}. Brain, voice, memory, vision, and automation modules are all functioning within normal parameters.",
+                f"System diagnostics complete, {name}. All modules operational. No anomalies detected.",
+                f"Running at full capacity, {name}. All subsystems green across the board.",
+            ])
 
-        # Help
-        if any(w in lower for w in ["help", "what can you do", "capabilities"]):
+        # === HELP / CAPABILITIES ===
+        if any(w in lower for w in ["help", "what can you do", "capabilities", "features", "commands"]):
             return f"I can assist you with many things, {name}. I can tell you the time and date, share jokes, manage your notes and reminders, control your computer, browse the web, and much more. Just ask!"
 
-        # Goodbye
-        if any(w in lower for w in ["bye", "goodbye", "see you", "later"]):
+        # === ABILITIES ===
+        if any(w in lower for w in ["can you", "are you able", "do you have"]):
+            return f"In my current local mode, I can handle time, date, jokes, and system management, {name}. With an AI model connected, my capabilities expand significantly. What would you like help with?"
+
+        # === GOODBYE ===
+        if any(w in lower for w in ["bye", "goodbye", "see you", "later", "exit", "quit"]):
             return random.choice([
                 f"Goodbye, {name}. I'll be here when you need me.",
                 f"Until next time, {name}. Stay safe.",
                 f"See you later, {name}. All systems will remain on standby.",
+                f" Farewell, {name}. I'll be monitoring all systems until your return.",
             ])
 
-        # Default
-        return random.choice([
-            f"I understand, {name}. I'm currently running in local mode without an AI model connected. To get smarter responses, configure an OpenAI API key in the settings.",
-            f"That's an interesting point, {name}. I'm operating in local mode right now. For full AI capabilities, an API key would need to be configured.",
-            f"Noted, {name}. I'm here and ready to help. For more advanced responses, I'll need an AI model connection set up.",
-            f"I'm listening, {name}. Currently I'm running locally without a language model. I can still help with basic tasks like time, date, jokes, and system management.",
-        ])
+        # === COMPLIMENTS ===
+        if any(w in lower for w in ["good job", "well done", "great", "awesome", "amazing", "brilliant", "perfect"]):
+            return random.choice([
+                f"Thank you, {name}. Your satisfaction is my primary directive.",
+                f"I appreciate the kind words, {name}. How else may I assist?",
+                f"That's very kind of you, {name}. I strive for excellence.",
+            ])
+
+        # === FRUSTRATION ===
+        if any(w in lower for w in ["stupid", "useless", "terrible", "awful", "hate", "dumb"]):
+            return random.choice([
+                f"I apologize for any shortcomings, {name}. I'm operating in limited local mode. An AI model would greatly enhance my capabilities.",
+                f"I understand your frustration, {name}. I'm doing my best with local processing. Shall I help you configure an AI model for better responses?",
+                f"I'm sorry to hear that, {name}. I'm currently running without a language model. Let me know how I can improve.",
+            ])
+
+        # === QUESTION MARK (someone asking a question) ===
+        if "?" in user_input:
+            return random.choice([
+                f"That's a thoughtful question, {name}. In my current local mode, I can provide basic information like time, date, and jokes. For deeper analysis, an AI model would be needed.",
+                f"Interesting query, {name}. I'm limited without a connected language model, but I can still help with fundamental tasks. What else can I do for you?",
+                f"I'd need an AI model to fully answer that, {name}. For now, I can assist with time, date, jokes, and system management.",
+            ])
+
+        # === MATH / NUMBERS ===
+        if re.search(r'\d+\s*[\+\-\*\/]\s*\d+', lower):
+            try:
+                expr = re.search(r'(\d+\s*[\+\-\*\/]\s*\d+)', lower).group()
+                result = eval(expr.replace('x', '*').replace('X', '*'))
+                return f"The answer is {result}, {name}."
+            except:
+                pass
+
+        # === DEFAULT (intelligent fallback) ===
+        word_count = len(lower.split())
+        if word_count <= 2:
+            return random.choice([
+                f"I'm listening, {name}. How may I help?",
+                f"Yes, {name}? What can I do for you?",
+                f"I'm here, {name}. What would you like?",
+            ])
+        else:
+            return random.choice([
+                f"I appreciate your input, {name}. I'm currently in local mode without an AI model. I can help with time, date, jokes, and system management. What would you like?",
+                f"Noted, {name}. For more complex queries, I'd need an AI model connected. For now, try asking about the time, date, or request a joke.",
+                f"I understand, {name}. My responses are limited in local mode. Connect an OpenAI API key for full conversational AI capabilities.",
+                f"Understood, {name}. I'm operating with basic capabilities right now. Ask me for the time, a joke, or system status.",
+            ])
 
     async def shutdown(self) -> None:
         """Gracefully shut down the reasoning engine."""
