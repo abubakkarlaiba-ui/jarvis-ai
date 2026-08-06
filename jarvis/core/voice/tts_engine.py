@@ -373,7 +373,7 @@ class TTSEngine:
             await self.initialize()
 
         if not text or not text.strip():
-            return False
+            return
 
         # Resolve voice profile
         profile = self._get_profile(personality or self._personality)
@@ -396,13 +396,13 @@ class TTSEngine:
                 ):
                     if interruptible and self._should_interrupt:
                         logger.debug("TTS interrupted by user")
-                        return False
+                        return
                     yield chunk
 
             elif self._active_backend == "elevenlabs" and self._elevenlabs:
                 async for chunk in self._elevenlabs.synthesize(text, profile.voice_id):
                     if interruptible and self._should_interrupt:
-                        return False
+                        return
                     yield chunk
 
             elif self._active_backend == "pyttsx3" and self._pyttsx3:
@@ -418,16 +418,14 @@ class TTSEngine:
                     audio_bytes = Path(tmp_path).read_bytes()
                     if interruptible and self._should_interrupt:
                         os.unlink(tmp_path)
-                        return False
+                        return
                     yield audio_bytes
                 os.unlink(tmp_path) if os.path.exists(tmp_path) else None
 
             self._utterance_count += 1
-            return True
 
         except Exception as exc:
             logger.error("TTS speak failed: %s", exc)
-            return False
 
         finally:
             async with self._speak_lock:

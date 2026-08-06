@@ -195,10 +195,10 @@ async def main_async(args: argparse.Namespace) -> None:
 
     # Initialize core modules
     from jarvis.core.brain import BrainModule
-    from jarvis.core.memory import MemoryModule
+    from jarvis.core.memory import MemorySystem
 
     brain = BrainModule()
-    memory = MemoryModule(settings.memory)
+    memory = MemorySystem(settings.memory)
 
     host = args.host or settings.api.host
     port = args.port or settings.api.port

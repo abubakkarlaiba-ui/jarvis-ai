@@ -217,7 +217,7 @@ class ReasoningEngine:
 
         try:
             # 1. Session management
-            session = self._resolve_session(session_id)
+            session = await self._resolve_session(session_id)
 
             # 2. Store user message
             await self.memory.add_message(session.id, "user", user_input)
@@ -256,6 +256,10 @@ class ReasoningEngine:
                 text, tool_calls, stream_metrics = await self._generate_batch(
                     messages, tool_schemas
                 )
+
+            # 8b. Fallback if LLM returned error
+            if text.startswith("[LLM not available]") or not text.strip():
+                text = self._fallback_response(user_input, session)
 
             # 9. Execute any tool calls
             tools_used = []
@@ -376,7 +380,7 @@ class ReasoningEngine:
         profile = self.personality.get_profile()
 
         # Build system prompt
-        tool_names = [t["name"] for t in self.tools.get_schemas()]
+        tool_names = [t["function"]["name"] for t in self.tools.get_schemas()]
         system_prompt = await self.prompt_engine.build_system_prompt(
             context=context,
             personality="formal" if profile.formality_level > 0.7 else "concise",
@@ -462,7 +466,7 @@ class ReasoningEngine:
         context: ContextSnapshot,
     ) -> TaskPlan:
         """Create and partially execute a task plan."""
-        tool_names = [t["name"] for t in self.tools.get_schemas()]
+        tool_names = [t["function"]["name"] for t in self.tools.get_schemas()]
         plan = await self.planner.create_plan(user_input, context, tool_names)
         self._metrics.plans_created += 1
 
@@ -502,6 +506,93 @@ class ReasoningEngine:
             "personality": self.personality.active_name,
             "tools": len(self.tools.list_tools()),
         }
+
+    def _fallback_response(self, user_input: str, session) -> str:
+        """Smart fallback when no LLM is available."""
+        import random
+        import datetime
+
+        lower = user_input.lower().strip()
+        name = session.name if session else "sir"
+        hour = datetime.datetime.now().hour
+
+        # Time-based greetings
+        if any(w in lower for w in ["hello", "hi", "hey", "greetings"]):
+            if hour < 12:
+                return f"Good morning, {name}. How may I assist you today?"
+            elif hour < 17:
+                return f"Good afternoon, {name}. What can I do for you?"
+            else:
+                return f"Good evening, {name}. How may I be of service?"
+
+        # How are you
+        if any(w in lower for w in ["how are you", "how do you do", "what's up", "sup"]):
+            return f"All systems are functioning within normal parameters, {name}. Thank you for asking. How can I help you?"
+
+        # Time
+        if any(w in lower for w in ["time", "what time", "current time", "clock"]):
+            now = datetime.datetime.now().strftime("%I:%M %p")
+            return f"The current time is {now}, {name}."
+
+        # Date
+        if any(w in lower for w in ["date", "what date", "today", "what day"]):
+            now = datetime.datetime.now().strftime("%A, %B %d, %Y")
+            return f"Today is {now}, {name}."
+
+        # Weather
+        if "weather" in lower:
+            return f"I'd love to check the weather for you, {name}, but I need an API key configured for weather data. Would you like me to help you set that up?"
+
+        # Jokes
+        if any(w in lower for w in ["joke", "funny", "laugh"]):
+            jokes = [
+                f"Why do programmers prefer dark mode? Because light attracts bugs, {name}.",
+                f"Parallel lines have so much in common. It's a shame they'll never meet, {name}.",
+                f"Why was the computer cold? It left its Windows open, {name}.",
+                f"What's a computer's favorite snack? Microchips, {name}.",
+                f"Why did the developer go broke? Because he used up all his cache, {name}.",
+            ]
+            return random.choice(jokes)
+
+        # Thanks
+        if any(w in lower for w in ["thank", "thanks", "appreciate"]):
+            return random.choice([
+                f"You're welcome, {name}. That's what I'm here for.",
+                f"Always happy to help, {name}.",
+                f"My pleasure, {name}. Let me know if you need anything else.",
+            ])
+
+        # Name
+        if any(w in lower for w in ["your name", "who are you", "what are you"]):
+            return f"I'm J.A.R.V.I.S. — Just A Rather Very Intelligent System. Your personal AI assistant, {name}."
+
+        # Who made you
+        if any(w in lower for w in ["who made you", "who created you", "your creator"]):
+            return f"I was created to serve and assist you, {name}. That's all that matters, wouldn't you agree?"
+
+        # Status
+        if any(w in lower for w in ["status", "system status", "how are things"]):
+            return f"All systems are online and operational, {name}. Brain, voice, memory, vision, and automation modules are all functioning normally."
+
+        # Help
+        if any(w in lower for w in ["help", "what can you do", "capabilities"]):
+            return f"I can assist you with many things, {name}. I can tell you the time and date, share jokes, manage your notes and reminders, control your computer, browse the web, and much more. Just ask!"
+
+        # Goodbye
+        if any(w in lower for w in ["bye", "goodbye", "see you", "later"]):
+            return random.choice([
+                f"Goodbye, {name}. I'll be here when you need me.",
+                f"Until next time, {name}. Stay safe.",
+                f"See you later, {name}. All systems will remain on standby.",
+            ])
+
+        # Default
+        return random.choice([
+            f"I understand, {name}. I'm currently running in local mode without an AI model connected. To get smarter responses, configure an OpenAI API key in the settings.",
+            f"That's an interesting point, {name}. I'm operating in local mode right now. For full AI capabilities, an API key would need to be configured.",
+            f"Noted, {name}. I'm here and ready to help. For more advanced responses, I'll need an AI model connection set up.",
+            f"I'm listening, {name}. Currently I'm running locally without a language model. I can still help with basic tasks like time, date, jokes, and system management.",
+        ])
 
     async def shutdown(self) -> None:
         """Gracefully shut down the reasoning engine."""

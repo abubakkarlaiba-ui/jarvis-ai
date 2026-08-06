@@ -51,8 +51,8 @@ class APIKeyMiddleware(BaseHTTPMiddleware):
 
     SKIP_PATHS = {"/health", "/docs", "/openapi.json", "/redoc"}
 
-    def __init__(self, api_key: str | None = None):
-        super().__init__()
+    def __init__(self, app, api_key: str | None = None):
+        super().__init__(app)
         self.api_key = api_key
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:

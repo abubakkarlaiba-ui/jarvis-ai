@@ -1,242 +1,830 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JARVIS — AI Assistant</title>
-    <link rel="stylesheet" href="/static/css/styles.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>J.A.R.V.I.S.</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap');
+
+*{margin:0;padding:0;box-sizing:border-box}
+
+:root{
+  --pri:#00d4ff;--pri-dim:#00d4ff44;--pri-glow:#00d4ff88;
+  --bg:#05080f;--panel:#0a0f1ae0;--border:#00d4ff22;
+  --txt:#c9d1d9;--success:#00ff88;--warn:#ffaa00;--err:#ff4444;
+}
+body{font-family:'Rajdhani',sans-serif;background:var(--bg);color:var(--txt);overflow:hidden;height:100vh;width:100vw}
+
+/* ===== CANVAS ===== */
+canvas#bg{position:fixed;inset:0;z-index:0}
+
+/* ===== SCREENS ===== */
+.screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;transition:opacity 1s ease,transform 1s ease;z-index:10}
+.screen.hidden{opacity:0;pointer-events:none;transform:scale(0.9)}
+
+/* ===== LOGIN ===== */
+#login{z-index:20}
+.reactor{width:200px;height:200px;position:relative;margin-bottom:40px}
+.reactor .r{position:absolute;border-radius:50%;border:2px solid var(--pri);animation:spin 4s linear infinite}
+.reactor .r:nth-child(1){inset:0}
+.reactor .r:nth-child(2){inset:20px;animation-direction:reverse;animation-duration:3s;border-style:dashed}
+.reactor .r:nth-child(3){inset:40px;animation-duration:2s}
+.reactor .c{position:absolute;inset:55px;border-radius:50%;background:radial-gradient(circle,var(--pri) 0%,transparent 70%);box-shadow:0 0 40px var(--pri-glow),0 0 80px var(--pri-dim);animation:pulse 2s ease-in-out infinite}
+.reactor .c::after{content:'';position:absolute;inset:18px;border-radius:50%;background:radial-gradient(circle,#fff 0%,var(--pri) 50%,transparent 100%)}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:.7;transform:scale(1)}50%{opacity:1;transform:scale(1.1)}}
+
+.title{font-family:'Orbitron',sans-serif;font-size:48px;font-weight:900;letter-spacing:14px;color:var(--pri);text-shadow:0 0 30px var(--pri-glow);margin-bottom:6px}
+.subtitle{font-size:13px;letter-spacing:8px;color:var(--pri-dim);margin-bottom:50px;text-transform:uppercase}
+.login-input{width:340px;padding:16px 20px;background:transparent;border:1px solid var(--border);border-radius:4px;color:var(--pri);font-family:'Orbitron',sans-serif;font-size:16px;letter-spacing:3px;text-align:center;outline:none;transition:all .3s}
+.login-input::placeholder{color:#ffffff22}
+.login-input:focus{border-color:var(--pri);box-shadow:0 0 30px var(--pri-dim),inset 0 0 30px var(--pri-dim)}
+.login-btn{margin-top:20px;padding:14px 50px;background:transparent;border:1px solid var(--pri);color:var(--pri);font-family:'Orbitron',sans-serif;font-size:12px;letter-spacing:5px;cursor:pointer;transition:all .3s;text-transform:uppercase}
+.login-btn:hover{background:var(--pri);color:var(--bg);box-shadow:0 0 40px var(--pri-glow)}
+
+/* Theme selector */
+.theme-row{display:flex;gap:10px;margin-top:30px}
+.theme-dot{width:28px;height:28px;border-radius:50%;border:2px solid #ffffff22;cursor:pointer;transition:all .3s}
+.theme-dot:hover,.theme-dot.active{border-color:#fff;transform:scale(1.2)}
+
+/* ===== CONNECT ===== */
+#connect{z-index:15}
+.c-ring{width:220px;height:220px;position:relative;margin-bottom:40px}
+.c-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.c-ring .trk{fill:none;stroke:var(--border);stroke-width:2}
+.c-ring .prog{fill:none;stroke:var(--pri);stroke-width:3;stroke-dasharray:628;stroke-dashoffset:628;stroke-linecap:round;filter:drop-shadow(0 0 10px var(--pri-glow))}
+.c-ring .pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Orbitron',sans-serif;font-size:40px;font-weight:700;color:var(--pri)}
+.c-status{font-family:'Orbitron',sans-serif;font-size:15px;letter-spacing:5px;color:var(--pri);min-height:24px}
+.c-sub{margin-top:10px;font-size:12px;color:#ffffff33;letter-spacing:3px}
+
+/* ===== MAIN ===== */
+#main{z-index:10;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:25px}
+
+.top{position:absolute;top:15px;left:25px;right:25px;display:flex;justify-content:space-between;align-items:center}
+.top .logo{font-family:'Orbitron',sans-serif;font-size:15px;font-weight:700;letter-spacing:6px;color:var(--pri)}
+.top .right{display:flex;align-items:center;gap:15px}
+.top .badge{display:flex;align-items:center;gap:6px;font-size:11px;letter-spacing:2px;color:#ffffff55}
+.top .dot{width:7px;height:7px;border-radius:50%;background:var(--success);box-shadow:0 0 8px var(--success)}
+.top .theme-btn{width:24px;height:24px;border-radius:50%;border:2px solid #ffffff33;cursor:pointer;transition:all .3s}
+.top .theme-btn:hover{border-color:#fff;transform:scale(1.15)}
+
+/* Waveform */
+#wave{width:550px;height:90px;opacity:0;transition:opacity .6s}
+#wave.on{opacity:1}
+
+/* Mic reactor */
+.mic{width:240px;height:240px;position:relative;cursor:pointer;transition:transform .2s}
+.mic:hover{transform:scale(1.04)}
+.mic:active{transform:scale(.96)}
+.mic .o{position:absolute;inset:0;border-radius:50%;border:2px solid var(--border);animation:spin 10s linear infinite}
+.mic .m{position:absolute;inset:18px;border-radius:50%;border:2px dashed var(--pri-dim);animation:spin 7s linear infinite reverse}
+.mic .i{position:absolute;inset:36px;border-radius:50%;border:2px solid var(--pri);animation:spin 5s linear infinite}
+.mic .core{position:absolute;inset:52px;border-radius:50%;background:radial-gradient(circle,var(--pri) 0%,transparent 70%);box-shadow:0 0 30px var(--pri-dim);display:flex;align-items:center;justify-content:center;transition:all .3s}
+.mic .ico{font-size:40px;color:var(--bg);transition:color .3s}
+
+/* States */
+.mic.listen .core{background:radial-gradient(circle,var(--err) 0%,transparent 70%);box-shadow:0 0 60px #ff444488,0 0 120px #ff444444;animation:lpulse 1s ease-in-out infinite}
+.mic.listen .ico{color:#fff}
+.mic.listen .o,.mic.listen .m,.mic.listen .i{border-color:#ff444466}
+.mic.proc .core{background:radial-gradient(circle,var(--warn) 0%,transparent 70%);box-shadow:0 0 40px #ffaa0066;animation:pspin 1.5s linear infinite}
+.mic.talk .core{background:radial-gradient(circle,var(--success) 0%,transparent 70%);box-shadow:0 0 60px #00ff8866,0 0 120px #00ff8833;animation:tpulse .6s ease-in-out infinite}
+.mic.talk .ico{color:#fff}
+@keyframes lpulse{0%,100%{box-shadow:0 0 60px #ff444488}50%{box-shadow:0 0 100px #ff4444cc,0 0 160px #ff444444}}
+@keyframes pspin{to{transform:rotate(360deg)}}
+@keyframes tpulse{0%,100%{box-shadow:0 0 60px #00ff8866}50%{box-shadow:0 0 110px #00ff88bb}}
+
+/* State label */
+.slabel{font-family:'Orbitron',sans-serif;font-size:13px;letter-spacing:6px;text-transform:uppercase;min-height:20px;transition:color .3s;color:var(--pri)}
+.slabel.listen{color:var(--err)}.slabel.proc{color:var(--warn)}.slabel.talk{color:var(--success)}
+
+/* Transcript */
+.tbox{position:absolute;bottom:25px;left:25px;right:25px;max-height:130px;overflow-y:auto;display:flex;flex-direction:column;gap:5px;scrollbar-width:thin;scrollbar-color:var(--pri-dim) transparent;padding:8px}
+.tbox::-webkit-scrollbar{width:3px}
+.tbox::-webkit-scrollbar-thumb{background:var(--pri-dim)}
+.tline{display:flex;gap:10px;font-size:12px;animation:fin .3s ease}
+@keyframes fin{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.tline .w{font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:2px;min-width:65px;text-align:right;padding-top:2px}
+.tline.usr .w{color:var(--pri)}.tline.jv .w{color:var(--success)}
+.tline .t{color:#ffffff88}
+.hint{position:absolute;bottom:8px;font-size:10px;color:#ffffff18;letter-spacing:2px}
+</style>
 </head>
 <body>
-    <!-- Ambient background -->
-    <div class="ambient-bg">
-        <div class="grid-overlay"></div>
-        <div class="particle-field" id="particles"></div>
-        <div class="scan-line"></div>
+<canvas id="bg"></canvas>
+
+<!-- LOGIN -->
+<div class="screen" id="login">
+  <div class="reactor"><div class="r"></div><div class="r"></div><div class="r"></div><div class="c"></div></div>
+  <div class="title">J.A.R.V.I.S.</div>
+  <div class="subtitle">Just A Rather Very Intelligent System</div>
+  <input class="login-input" id="ni" type="text" placeholder="ENTER YOUR NAME" autofocus maxlength="20">
+  <button class="login-btn" id="lb">INITIALIZE</button>
+  <div class="theme-row" id="theme-row"></div>
+</div>
+
+<!-- CONNECT -->
+<div class="screen hidden" id="connect">
+  <div class="c-ring">
+    <svg viewBox="0 0 200 200"><circle class="trk" cx="100" cy="100" r="100"/><circle class="prog" id="cp" cx="100" cy="100" r="100"/></svg>
+    <div class="pct" id="cx">0%</div>
+  </div>
+  <div class="c-status" id="cs">INITIALIZING...</div>
+  <div class="c-sub" id="cu">Establishing secure connection</div>
+</div>
+
+<!-- MAIN -->
+<div class="screen hidden" id="main">
+  <div class="top">
+    <div class="logo">J.A.R.V.I.S.</div>
+    <div class="right">
+      <div class="badge"><div class="dot"></div><span id="un">-</span></div>
+      <div class="theme-btn" id="tbtn" title="Switch theme"></div>
     </div>
+  </div>
+  <canvas id="wave"></canvas>
+  <div class="mic" id="mic">
+    <div class="o"></div><div class="m"></div><div class="i"></div>
+    <div class="core"><div class="ico" id="micIco">&#127908;</div></div>
+  </div>
+  <div class="slabel" id="sl">TAP TO SPEAK</div>
+  <div class="tbox" id="tb"></div>
+  <div class="hint">Click reactor to speak &middot; Say "Hey Jarvis" to wake</div>
+</div>
 
-    <!-- Top bar -->
-    <header class="top-bar" role="banner">
-        <div class="top-bar__left">
-            <div class="logo" aria-label="JARVIS">
-                <svg class="logo__icon" viewBox="0 0 40 40" width="40" height="40">
-                    <circle cx="20" cy="20" r="18" fill="none" stroke="var(--neon)" stroke-width="1.5" opacity="0.6"/>
-                    <circle cx="20" cy="20" r="12" fill="none" stroke="var(--neon)" stroke-width="1"/>
-                    <circle cx="20" cy="20" r="3" fill="var(--neon)"/>
-                    <line x1="20" y1="2" x2="20" y2="8" stroke="var(--neon)" stroke-width="1"/>
-                    <line x1="20" y1="32" x2="20" y2="38" stroke="var(--neon)" stroke-width="1"/>
-                    <line x1="2" y1="20" x2="8" y2="20" stroke="var(--neon)" stroke-width="1"/>
-                    <line x1="32" y1="20" x2="38" y2="20" stroke="var(--neon)" stroke-width="1"/>
-                </svg>
-                <span class="logo__text">JARVIS</span>
-                <span class="logo__version" id="version">v2.0</span>
-            </div>
-        </div>
-        <div class="top-bar__center">
-            <div class="status-indicator" id="statusIndicator" role="status" aria-live="polite">
-                <span class="status-indicator__dot"></span>
-                <span class="status-indicator__text">Systems Online</span>
-            </div>
-        </div>
-        <div class="top-bar__right">
-            <button class="icon-btn" id="themeToggle" aria-label="Toggle theme" title="Toggle theme (T)">
-                <svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z" fill="currentColor"/></svg>
-            </button>
-            <button class="icon-btn" id="fullscreenBtn" aria-label="Fullscreen" title="Fullscreen (F)">
-                <svg viewBox="0 0 24 24" width="20" height="20"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z" fill="currentColor"/></svg>
-            </button>
-            <button class="icon-btn" id="settingsBtn" aria-label="Settings" title="Settings (Ctrl+,)">
-                <svg viewBox="0 0 24 24" width="20" height="20"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2z" fill="currentColor"/></svg>
-            </button>
-            <span class="clock" id="clock" aria-live="off"></span>
-        </div>
-    </header>
+<script>
+// ===================================================================
+//  SOUND SYNTHESIS ENGINE — 100% Original, generated via Web Audio API
+// ===================================================================
+class SoundEngine {
+  constructor() {
+    this.ctx = null;
+    this.masterGain = null;
+    this.muted = false;
+    this.volume = 0.7;
+    this._init();
+  }
 
-    <!-- Main layout -->
-    <main class="main-layout" role="main">
-        <!-- Left panel: System Monitor -->
-        <section class="panel panel--system" id="systemPanel" aria-label="System Monitor">
-            <div class="panel__header">
-                <h2 class="panel__title">SYSTEM</h2>
-                <button class="panel__collapse" aria-label="Collapse panel" data-panel="system">−</button>
-            </div>
-            <div class="panel__body">
-                <div class="monitor-grid">
-                    <!-- CPU -->
-                    <div class="monitor-card" role="meter" aria-label="CPU Usage" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
-                        <div class="monitor-card__ring">
-                            <svg viewBox="0 0 100 100">
-                                <circle cx="50" cy="50" r="42" fill="none" stroke="var(--glass-border)" stroke-width="6"/>
-                                <circle cx="50" cy="50" r="42" fill="none" stroke="var(--neon)" stroke-width="6" stroke-dasharray="264" stroke-dashoffset="264" stroke-linecap="round" class="progress-ring" data-target="cpu"/>
-                            </svg>
-                            <span class="monitor-card__value" id="cpuValue">0%</span>
-                        </div>
-                        <span class="monitor-card__label">CPU</span>
-                        <span class="monitor-card__detail" id="cpuDetail">— cores</span>
-                    </div>
-                    <!-- RAM -->
-                    <div class="monitor-card" role="meter" aria-label="RAM Usage" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
-                        <div class="monitor-card__ring">
-                            <svg viewBox="0 0 100 100">
-                                <circle cx="50" cy="50" r="42" fill="none" stroke="var(--glass-border)" stroke-width="6"/>
-                                <circle cx="50" cy="50" r="42" fill="none" stroke="var(--neon-alt)" stroke-width="6" stroke-dasharray="264" stroke-dashoffset="264" stroke-linecap="round" class="progress-ring" data-target="ram"/>
-                            </svg>
-                            <span class="monitor-card__value" id="ramValue">0%</span>
-                        </div>
-                        <span class="monitor-card__label">RAM</span>
-                        <span class="monitor-card__detail" id="ramDetail">— GB</span>
-                    </div>
-                    <!-- GPU -->
-                    <div class="monitor-card" role="meter" aria-label="GPU Usage" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
-                        <div class="monitor-card__ring">
-                            <svg viewBox="0 0 100 100">
-                                <circle cx="50" cy="50" r="42" fill="none" stroke="var(--glass-border)" stroke-width="6"/>
-                                <circle cx="50" cy="50" r="42" fill="none" stroke="var(--neon-green)" stroke-width="6" stroke-dasharray="264" stroke-dashoffset="264" stroke-linecap="round" class="progress-ring" data-target="gpu"/>
-                            </svg>
-                            <span class="monitor-card__value" id="gpuValue">0%</span>
-                        </div>
-                        <span class="monitor-card__label">GPU</span>
-                        <span class="monitor-card__detail" id="gpuDetail">—</span>
-                    </div>
-                    <!-- Network -->
-                    <div class="monitor-card" role="meter" aria-label="Network Usage">
-                        <div class="monitor-card__ring">
-                            <svg viewBox="0 0 100 100">
-                                <circle cx="50" cy="50" r="42" fill="none" stroke="var(--glass-border)" stroke-width="6"/>
-                                <circle cx="50" cy="50" r="42" fill="none" stroke="var(--neon-purple)" stroke-width="6" stroke-dasharray="264" stroke-dashoffset="264" stroke-linecap="round" class="progress-ring" data-target="net"/>
-                            </svg>
-                            <span class="monitor-card__value" id="netValue">0</span>
-                        </div>
-                        <span class="monitor-card__label">NET</span>
-                        <span class="monitor-card__detail" id="netDetail">↓ 0 ↑ 0 Mbps</span>
-                    </div>
-                </div>
-                <!-- Mini sparkline charts -->
-                <div class="sparkline-row">
-                    <canvas id="cpuSparkline" width="200" height="40" aria-label="CPU history chart"></canvas>
-                    <canvas id="ramSparkline" width="200" height="40" aria-label="RAM history chart"></canvas>
-                </div>
-                <div class="system-info" id="systemInfo">
-                    <div class="system-info__row"><span>OS</span><span id="osInfo">—</span></div>
-                    <div class="system-info__row"><span>Uptime</span><span id="uptimeInfo">—</span></div>
-                    <div class="system-info__row"><span>Processes</span><span id="processInfo">—</span></div>
-                </div>
-            </div>
-        </section>
+  _init() {
+    try {
+      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      this.masterGain = this.ctx.createGain();
+      this.masterGain.gain.value = this.volume;
+      this.masterGain.connect(this.ctx.destination);
+    } catch(e) { console.warn('Web Audio not supported'); }
+  }
 
-        <!-- Center: Chat -->
-        <section class="panel panel--chat" id="chatPanel" aria-label="Chat">
-            <div class="panel__header">
-                <h2 class="panel__title">CHAT</h2>
-                <div class="panel__header-actions">
-                    <button class="icon-btn icon-btn--sm" id="clearChat" aria-label="Clear chat" title="Clear chat">
-                        <svg viewBox="0 0 24 24" width="16" height="16"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" fill="currentColor"/></svg>
-                    </button>
-                </div>
-            </div>
-            <div class="chat-messages" id="chatMessages" role="log" aria-live="polite" aria-label="Chat messages">
-                <div class="chat-welcome" id="chatWelcome">
-                    <div class="chat-welcome__icon">
-                        <svg viewBox="0 0 60 60" width="60" height="60">
-                            <circle cx="30" cy="30" r="28" fill="none" stroke="var(--neon)" stroke-width="1" opacity="0.4"/>
-                            <circle cx="30" cy="30" r="20" fill="none" stroke="var(--neon)" stroke-width="0.5" opacity="0.3"/>
-                            <circle cx="30" cy="30" r="4" fill="var(--neon)" opacity="0.8"/>
-                        </svg>
-                    </div>
-                    <h3>J.A.R.V.I.S.</h3>
-                    <p>Just A Rather Very Intelligent System</p>
-                    <p class="chat-welcome__hint">Type a message or press <kbd>Space</kbd> to talk</p>
-                </div>
-            </div>
-            <div class="chat-input-area">
-                <div class="chat-input-wrapper">
-                    <textarea id="chatInput" class="chat-input" placeholder="Ask me anything..." rows="1" aria-label="Message input" autocomplete="off"></textarea>
-                    <button class="chat-send" id="chatSend" aria-label="Send message" title="Send (Enter)">
-                        <svg viewBox="0 0 24 24" width="20" height="20"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" fill="currentColor"/></svg>
-                    </button>
-                </div>
-            </div>
-        </section>
+  resume() {
+    if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+  }
 
-        <!-- Right panel: Tasks & Notifications -->
-        <section class="panel panel--tasks" id="tasksPanel" aria-label="Tasks and Notifications">
-            <div class="panel__header">
-                <h2 class="panel__title">TASKS</h2>
-                <button class="panel__collapse" aria-label="Collapse panel" data-panel="tasks">−</button>
-            </div>
-            <div class="panel__body">
-                <div class="task-tabs" role="tablist">
-                    <button class="task-tab active" role="tab" data-tab="queue" aria-selected="true">Queue</button>
-                    <button class="task-tab" role="tab" data-tab="workflows" aria-selected="false">Workflows</button>
-                    <button class="task-tab" role="tab" data-tab="skills" aria-selected="false">Skills</button>
-                </div>
-                <div class="task-content" id="taskContent" role="tabpanel">
-                    <div class="task-list" id="taskQueue">
-                        <div class="task-empty">No tasks in queue</div>
-                    </div>
-                    <div class="task-list hidden" id="workflowList">
-                        <div class="task-empty">No active workflows</div>
-                    </div>
-                    <div class="task-list hidden" id="skillList"></div>
-                </div>
-                <!-- Notifications -->
-                <div class="notifications-section">
-                    <h3 class="section-title">NOTIFICATIONS</h3>
-                    <div class="notification-list" id="notificationList" role="log" aria-live="polite"></div>
-                </div>
-            </div>
-        </section>
-    </main>
+  setVolume(v) {
+    this.volume = Math.max(0, Math.min(1, v));
+    if (this.masterGain) this.masterGain.gain.setTargetAtTime(this.muted ? 0 : this.volume, this.ctx.currentTime, 0.05);
+  }
 
-    <!-- Voice section -->
-    <footer class="voice-bar" role="region" aria-label="Voice controls">
-        <div class="voice-waveform" id="voiceWaveform">
-            <canvas id="waveformCanvas" width="600" height="60" aria-label="Voice waveform"></canvas>
-        </div>
-        <button class="mic-btn" id="micBtn" aria-label="Toggle microphone" title="Toggle microphone (Space)">
-            <svg class="mic-btn__icon" viewBox="0 0 24 24" width="28" height="28">
-                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" fill="currentColor"/>
-                <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" fill="currentColor"/>
-            </svg>
-            <div class="mic-btn__pulse"></div>
-        </button>
-        <div class="voice-status" id="voiceStatus">
-            <span class="voice-status__text">Click microphone or press Space to speak</span>
-        </div>
-    </footer>
+  toggleMute() {
+    this.muted = !this.muted;
+    if (this.masterGain) this.masterGain.gain.setTargetAtTime(this.muted ? 0 : this.volume, this.ctx.currentTime, 0.05);
+    return this.muted;
+  }
 
-    <!-- Notification toast container -->
-    <div class="toast-container" id="toastContainer" role="alert" aria-live="assertive"></div>
+  // -- Utility --
+  _osc(type, freq, dur, gainVal = 0.3, detune = 0) {
+    if (!this.ctx) return;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    osc.detune.value = detune;
+    gain.gain.setValueAtTime(gainVal, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + dur);
+    osc.connect(gain);
+    gain.connect(this.masterGain);
+    osc.start(this.ctx.currentTime);
+    osc.stop(this.ctx.currentTime + dur);
+    return { osc, gain };
+  }
 
-    <!-- Keyboard shortcuts overlay -->
-    <div class="shortcuts-overlay hidden" id="shortcutsOverlay" role="dialog" aria-label="Keyboard shortcuts">
-        <div class="shortcuts-panel glass-panel">
-            <h2>Keyboard Shortcuts</h2>
-            <div class="shortcuts-grid">
-                <div class="shortcut"><kbd>Space</kbd><span>Toggle microphone</span></div>
-                <div class="shortcut"><kbd>Enter</kbd><span>Send message</span></div>
-                <div class="shortcut"><kbd>Shift+Enter</kbd><span>New line in input</span></div>
-                <div class="shortcut"><kbd>Ctrl+K</kbd><span>Quick command</span></div>
-                <div class="shortcut"><kbd>Ctrl+/</kbd><span>Toggle shortcuts</span></div>
-                <div class="shortcut"><kbd>T</kbd><span>Toggle theme</span></div>
-                <div class="shortcut"><kbd>F</kbd><span>Toggle fullscreen</span></div>
-                <div class="shortcut"><kbd>1-3</kbd><span>Switch task tabs</span></div>
-                <div class="shortcut"><kbd>Escape</kbd><span>Close overlays</span></div>
-            </div>
-            <button class="btn btn--ghost" id="closeShortcuts">Close</button>
-        </div>
-    </div>
+  _noise(dur, gainVal = 0.05) {
+    if (!this.ctx) return;
+    const bufferSize = this.ctx.sampleRate * dur;
+    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+    const src = this.ctx.createBufferSource();
+    src.buffer = buffer;
+    const gain = this.ctx.createGain();
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = 'highpass';
+    filter.frequency.value = 8000;
+    gain.gain.setValueAtTime(gainVal, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + dur);
+    src.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.masterGain);
+    src.start(this.ctx.currentTime);
+  }
 
-    <!-- Scripts -->
-    <script src="/static/js/core.js"></script>
-    <script src="/static/js/voice.js"></script>
-    <script src="/static/js/system.js"></script>
-    <script src="/static/js/chat.js"></script>
-    <script src="/static/js/tasks.js"></script>
-    <script src="/static/js/notifications.js"></script>
-    <script src="/static/js/panels.js"></script>
-    <script src="/static/js/keyboard.js"></script>
-    <script src="/static/js/app.js"></script>
+  // ====== PREMIUM SOUNDS ======
+
+  // 1. Startup — cinematic activation (1.5s)
+  playStartup() {
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+
+    // Deep sub-bass pulse
+    const sub = this.ctx.createOscillator();
+    const subG = this.ctx.createGain();
+    sub.type = 'sine';
+    sub.frequency.setValueAtTime(40, t);
+    sub.frequency.exponentialRampToValueAtTime(120, t + 0.8);
+    subG.gain.setValueAtTime(0, t);
+    subG.gain.linearRampToValueAtTime(0.4, t + 0.1);
+    subG.gain.exponentialRampToValueAtTime(0.001, t + 1.2);
+    sub.connect(subG); subG.connect(this.masterGain);
+    sub.start(t); sub.stop(t + 1.2);
+
+    // Synth rise
+    const rise = this.ctx.createOscillator();
+    const riseG = this.ctx.createGain();
+    rise.type = 'sawtooth';
+    rise.frequency.setValueAtTime(200, t + 0.1);
+    rise.frequency.exponentialRampToValueAtTime(2000, t + 0.9);
+    riseG.gain.setValueAtTime(0, t + 0.1);
+    riseG.gain.linearRampToValueAtTime(0.12, t + 0.4);
+    riseG.gain.exponentialRampToValueAtTime(0.001, t + 1.0);
+    const riseFilter = this.ctx.createBiquadFilter();
+    riseFilter.type = 'lowpass';
+    riseFilter.frequency.setValueAtTime(400, t + 0.1);
+    riseFilter.frequency.exponentialRampToValueAtTime(4000, t + 0.9);
+    rise.connect(riseFilter); riseFilter.connect(riseG); riseG.connect(this.masterGain);
+    rise.start(t + 0.1); rise.stop(t + 1.0);
+
+    // Activation chime (3 harmonics)
+    [880, 1320, 1760].forEach((f, i) => {
+      const o = this.ctx.createOscillator();
+      const g = this.ctx.createGain();
+      o.type = 'sine';
+      o.frequency.value = f;
+      g.gain.setValueAtTime(0, t + 0.7);
+      g.gain.linearRampToValueAtTime(0.08, t + 0.75);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 1.5);
+      o.connect(g); g.connect(this.masterGain);
+      o.start(t + 0.7); o.stop(t + 1.5);
+    });
+
+    // Holographic shimmer
+    this._noise(0.8, 0.02);
+    const shim = this.ctx.createOscillator();
+    const shimG = this.ctx.createGain();
+    shim.type = 'triangle';
+    shim.frequency.setValueAtTime(6000, t + 0.5);
+    shim.frequency.exponentialRampToValueAtTime(3000, t + 1.3);
+    shimG.gain.setValueAtTime(0, t + 0.5);
+    shimG.gain.linearRampToValueAtTime(0.03, t + 0.7);
+    shimG.gain.exponentialRampToValueAtTime(0.001, t + 1.3);
+    shim.connect(shimG); shimG.connect(this.masterGain);
+    shim.start(t + 0.5); shim.stop(t + 1.3);
+  }
+
+  // 2. Wake — digital acknowledgement (300ms)
+  playWake() {
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    // Clean dual-tone ping
+    [660, 990].forEach((f, i) => {
+      const o = this.ctx.createOscillator();
+      const g = this.ctx.createGain();
+      o.type = 'sine';
+      o.frequency.value = f;
+      g.gain.setValueAtTime(0.15, t + i * 0.06);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.3 + i * 0.06);
+      o.connect(g); g.connect(this.masterGain);
+      o.start(t + i * 0.06); o.stop(t + 0.35);
+    });
+  }
+
+  // 3. Listening — ascending tone (400ms)
+  playListen() {
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    const o = this.ctx.createOscillator();
+    const g = this.ctx.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(400, t);
+    o.frequency.exponentialRampToValueAtTime(900, t + 0.35);
+    g.gain.setValueAtTime(0.12, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+    o.connect(g); g.connect(this.masterGain);
+    o.start(t); o.stop(t + 0.4);
+  }
+
+  // 4. Processing — ambient pulses (loops until stopped)
+  startProcessing() {
+    if (!this.ctx) return;
+    this._procOscs = [];
+    const t = this.ctx.currentTime;
+    [220, 330, 440].forEach((f, i) => {
+      const o = this.ctx.createOscillator();
+      const g = this.ctx.createGain();
+      o.type = 'sine';
+      o.frequency.value = f;
+      g.gain.value = 0;
+      // Pulsing LFO
+      const lfo = this.ctx.createOscillator();
+      const lfoG = this.ctx.createGain();
+      lfo.type = 'sine';
+      lfo.frequency.value = 1.5 + i * 0.5;
+      lfoG.gain.value = 0.025;
+      lfo.connect(lfoG); lfoG.connect(g.gain);
+      o.connect(g); g.connect(this.masterGain);
+      o.start(t); lfo.start(t);
+      this._procOscs.push({ o, g, lfo, lfoG });
+    });
+  }
+
+  stopProcessing() {
+    if (!this._procOscs) return;
+    const t = this.ctx.currentTime;
+    this._procOscs.forEach(({ o, g, lfo }) => {
+      g.gain.setTargetAtTime(0, t, 0.05);
+      o.stop(t + 0.2);
+      lfo.stop(t + 0.2);
+    });
+    this._procOscs = null;
+  }
+
+  // 5. Response complete — descending confirmation (500ms)
+  playComplete() {
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    [880, 660, 440].forEach((f, i) => {
+      const o = this.ctx.createOscillator();
+      const g = this.ctx.createGain();
+      o.type = 'sine';
+      o.frequency.value = f;
+      g.gain.setValueAtTime(0.1, t + i * 0.12);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.4 + i * 0.12);
+      o.connect(g); g.connect(this.masterGain);
+      o.start(t + i * 0.12); o.stop(t + 0.5 + i * 0.12);
+    });
+  }
+
+  // 6. Notifications
+  playSuccess() {
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    [523, 659, 784].forEach((f, i) => {
+      const o = this.ctx.createOscillator();
+      const g = this.ctx.createGain();
+      o.type = 'sine'; o.frequency.value = f;
+      g.gain.setValueAtTime(0.12, t + i * 0.1);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.5 + i * 0.1);
+      o.connect(g); g.connect(this.masterGain);
+      o.start(t + i * 0.1); o.stop(t + 0.6);
+    });
+  }
+
+  playWarning() {
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    [440, 370].forEach((f, i) => {
+      const o = this.ctx.createOscillator();
+      const g = this.ctx.createGain();
+      o.type = 'square'; o.frequency.value = f;
+      g.gain.setValueAtTime(0.06, t + i * 0.15);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.3 + i * 0.15);
+      o.connect(g); g.connect(this.masterGain);
+      o.start(t + i * 0.15); o.stop(t + 0.35 + i * 0.15);
+    });
+  }
+
+  playError() {
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    const o = this.ctx.createOscillator();
+    const g = this.ctx.createGain();
+    o.type = 'sawtooth'; o.frequency.setValueAtTime(300, t);
+    o.frequency.linearRampToValueAtTime(100, t + 0.4);
+    g.gain.setValueAtTime(0.08, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+    const f = this.ctx.createBiquadFilter();
+    f.type = 'lowpass'; f.frequency.value = 800;
+    o.connect(f); f.connect(g); g.connect(this.masterGain);
+    o.start(t); o.stop(t + 0.4);
+  }
+
+  playMessage() {
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    [800, 1000, 800].forEach((f, i) => {
+      const o = this.ctx.createOscillator();
+      const g = this.ctx.createGain();
+      o.type = 'sine'; o.frequency.value = f;
+      g.gain.setValueAtTime(0.1, t + i * 0.08);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.25 + i * 0.08);
+      o.connect(g); g.connect(this.masterGain);
+      o.start(t + i * 0.08); o.stop(t + 0.3 + i * 0.08);
+    });
+  }
+
+  playTaskDone() {
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    [600, 800].forEach((f, i) => {
+      const o = this.ctx.createOscillator();
+      const g = this.ctx.createGain();
+      o.type = 'triangle'; o.frequency.value = f;
+      g.gain.setValueAtTime(0.1, t + i * 0.12);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.4 + i * 0.12);
+      o.connect(g); g.connect(this.masterGain);
+      o.start(t + i * 0.12); o.stop(t + 0.5);
+    });
+  }
+
+  playReminder() {
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    [660, 880, 660, 880].forEach((f, i) => {
+      const o = this.ctx.createOscillator();
+      const g = this.ctx.createGain();
+      o.type = 'sine'; o.frequency.value = f;
+      g.gain.setValueAtTime(0.09, t + i * 0.15);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.2 + i * 0.15);
+      o.connect(g); g.connect(this.masterGain);
+      o.start(t + i * 0.15); o.stop(t + 0.25 + i * 0.15);
+    });
+  }
+}
+
+// ===================================================================
+//  AUDIO MANAGER — Preloading, caching, volume, ducking, mute
+// ===================================================================
+class AudioManager {
+  constructor() {
+    this.engine = new SoundEngine();
+    this.cache = new Map();
+    this.isSpeaking = false;
+    this._duckGain = null;
+  }
+
+  resume() { this.engine.resume(); }
+  setVolume(v) { this.engine.setVolume(v); }
+  toggleMute() { return this.engine.toggleMute(); }
+
+  // Duck background sounds while speaking
+  duck() {
+    this.isSpeaking = true;
+  }
+  unduck() {
+    this.isSpeaking = false;
+  }
+
+  // Play named sounds
+  play(name) {
+    this.engine.resume();
+    const e = this.engine;
+    switch(name) {
+      case 'startup': e.playStartup(); break;
+      case 'wake': e.playWake(); break;
+      case 'listen': e.playListen(); break;
+      case 'processing': e.startProcessing(); break;
+      case 'stopProcessing': e.stopProcessing(); break;
+      case 'complete': e.playComplete(); break;
+      case 'success': e.playSuccess(); break;
+      case 'warning': e.playWarning(); break;
+      case 'error': e.playError(); break;
+      case 'message': e.playMessage(); break;
+      case 'taskDone': e.playTaskDone(); break;
+      case 'reminder': e.playReminder(); break;
+    }
+  }
+}
+
+// ===================================================================
+//  THEMES
+// ===================================================================
+const THEMES = {
+  classic: {
+    name: 'Classic Blue',
+    pri: '#00d4ff', priDim: '#00d4ff44', priGlow: '#00d4ff88',
+    bg: '#05080f', panel: '#0a0f1ae0', border: '#00d4ff22',
+    success: '#00ff88', warn: '#ffaa00', err: '#ff4444'
+  },
+  midnight: {
+    name: 'Midnight Black',
+    pri: '#8888ff', priDim: '#8888ff33', priGlow: '#8888ff66',
+    bg: '#020208', panel: '#06060fe0', border: '#8888ff18',
+    success: '#88ff88', warn: '#ffcc44', err: '#ff6666'
+  },
+  redalert: {
+    name: 'Red Alert',
+    pri: '#ff2244', priDim: '#ff224444', priGlow: '#ff224488',
+    bg: '#0a0205', panel: '#0f050ae0', border: '#ff224422',
+    success: '#ff8844', warn: '#ffaa00', err: '#ff0022'
+  },
+  holo: {
+    name: 'White Hologram',
+    pri: '#ffffff', priDim: '#ffffff33', priGlow: '#ffffff66',
+    bg: '#0a0a0a', panel: '#111111e0', border: '#ffffff18',
+    success: '#aaffaa', warn: '#ffffaa', err: '#ffaaaa'
+  }
+};
+
+let currentTheme = 'classic';
+function applyTheme(key) {
+  currentTheme = key;
+  const t = THEMES[key];
+  const r = document.documentElement.style;
+  r.setProperty('--pri', t.pri);
+  r.setProperty('--pri-dim', t.priDim);
+  r.setProperty('--pri-glow', t.priGlow);
+  r.setProperty('--bg', t.bg);
+  r.setProperty('--panel', t.panel);
+  r.setProperty('--border', t.border);
+  r.setProperty('--success', t.success);
+  r.setProperty('--warn', t.warn);
+  r.setProperty('--err', t.err);
+  // Update theme dots
+  document.querySelectorAll('.theme-dot').forEach(d => {
+    d.classList.toggle('active', d.dataset.theme === key);
+  });
+}
+
+// ===================================================================
+//  BACKGROUND GRID + PARTICLES
+// ===================================================================
+const CV = document.getElementById('bg'), CX = CV.getContext('2d');
+let W, H;
+function resize() { W = CV.width = innerWidth; H = CV.height = innerHeight; }
+addEventListener('resize', resize); resize();
+function drawBg(t) {
+  CX.clearRect(0, 0, W, H);
+  CX.strokeStyle = (getComputedStyle(document.documentElement).getPropertyValue('--pri') || '#00d4ff') + '0a';
+  CX.lineWidth = 1;
+  const s = 55, o = (t * 0.015) % s;
+  for (let x = -s + o; x < W + s; x += s) { CX.beginPath(); CX.moveTo(x, 0); CX.lineTo(x, H); CX.stroke(); }
+  for (let y = -s + o; y < H + s; y += s) { CX.beginPath(); CX.moveTo(0, y); CX.lineTo(W, y); CX.stroke(); }
+  for (let i = 0; i < 20; i++) {
+    const px = (i * 157.3 + t * 0.008) % W, py = (i * 113.7 + t * 0.006) % H;
+    CX.fillStyle = `rgba(0,212,255,${0.05 + 0.05 * Math.sin(t * 0.001 + i)})`;
+    CX.beginPath(); CX.arc(px, py, 1.2, 0, Math.PI * 2); CX.fill();
+  }
+  requestAnimationFrame(drawBg);
+}
+requestAnimationFrame(drawBg);
+
+// ===================================================================
+//  WAVEFORM
+// ===================================================================
+const waveCanvas = document.getElementById('wave');
+const waveCtx = waveCanvas.getContext('2d');
+let waveAnim = null, analyser = null, waveData = null;
+function initWave() {
+  waveCanvas.width = 550; waveCanvas.height = 90;
+}
+initWave();
+
+function drawWave() {
+  waveAnim = requestAnimationFrame(drawWave);
+  if (!analyser) return;
+  analyser.getByteTimeDomainData(waveData);
+  waveCtx.clearRect(0, 0, waveCanvas.width, waveCanvas.height);
+  const styles = getComputedStyle(document.documentElement);
+  const col = state === 'listen' ? styles.getPropertyValue('--err') :
+              state === 'talk' ? styles.getPropertyValue('--success') :
+              styles.getPropertyValue('--pri');
+  waveCtx.strokeStyle = col;
+  waveCtx.lineWidth = 2;
+  waveCtx.shadowColor = col;
+  waveCtx.shadowBlur = 12;
+  waveCtx.beginPath();
+  const sl = waveCanvas.width / waveData.length;
+  let x = 0;
+  for (let i = 0; i < waveData.length; i++) {
+    const v = waveData[i] / 128.0;
+    const y = v * waveCanvas.height / 2;
+    i === 0 ? waveCtx.moveTo(x, y) : waveCtx.lineTo(x, y);
+    x += sl;
+  }
+  waveCtx.lineTo(waveCanvas.width, waveCanvas.height / 2);
+  waveCtx.stroke();
+  waveCtx.shadowBlur = 0;
+}
+
+// ===================================================================
+//  APP STATE
+// ===================================================================
+const audio = new AudioManager();
+let userName = '';
+let state = 'idle'; // idle, listen, proc, talk
+let recognition = null;
+let micStream = null;
+const synth = window.speechSynthesis;
+let msgCount = 0;
+
+// DOM
+const $ = id => document.getElementById(id);
+
+// ===== THEME DOTS =====
+const themeRow = $('theme-row');
+Object.entries(THEMES).forEach(([k, v]) => {
+  const d = document.createElement('div');
+  d.className = 'theme-dot' + (k === 'classic' ? ' active' : '');
+  d.dataset.theme = k;
+  d.style.background = v.pri;
+  d.title = v.name;
+  d.onclick = () => { applyTheme(k); audio.play('wake'); };
+  themeRow.appendChild(d);
+});
+$('tbtn').onclick = () => {
+  const keys = Object.keys(THEMES);
+  const next = keys[(keys.indexOf(currentTheme) + 1) % keys.length];
+  applyTheme(next);
+  audio.play('wake');
+};
+
+// ===== LOGIN =====
+$('lb').onclick = doLogin;
+$('ni').onkeydown = e => { if (e.key === 'Enter') doLogin(); };
+function doLogin() {
+  userName = $('ni').value.trim();
+  if (!userName) { $('ni').style.borderColor = '#ff4444'; return; }
+  audio.resume();
+  audio.play('startup');
+  $('login').classList.add('hidden');
+  $('connect').classList.remove('hidden');
+  runConnect();
+}
+
+// ===== CONNECT =====
+function runConnect() {
+  const circ = 2 * Math.PI * 100;
+  $('cp').style.strokeDasharray = circ;
+  $('cp').style.strokeDashoffset = circ;
+  const steps = [
+    { p: 10, s: 'BOOTING SYSTEMS...', sub: 'Hardware check complete' },
+    { p: 25, s: 'LOADING NEURAL CORE...', sub: 'Reasoning engine online' },
+    { p: 40, s: 'INITIALIZING VOICE...', sub: 'Speech synthesis ready' },
+    { p: 55, s: 'LOADING MEMORY BANKS...', sub: 'Short & long-term memory active' },
+    { p: 70, s: 'SCANNING SKILL MODULES...', sub: '17 skills loaded' },
+    { p: 85, s: 'ESTABLISHING SECURE LINK...', sub: 'Encrypted channel open' },
+    { p: 95, s: 'IDENTITY VERIFIED...', sub: `Welcome, ${userName}` },
+    { p: 100, s: 'ALL SYSTEMS NOMINAL', sub: 'JARVIS is ready' },
+  ];
+  let i = 0;
+  const iv = setInterval(() => {
+    if (i >= steps.length) {
+      clearInterval(iv);
+      audio.play('wake');
+      setTimeout(() => {
+        $('connect').classList.add('hidden');
+        $('main').classList.remove('hidden');
+        $('un').textContent = userName;
+        initMic();
+        setTimeout(() => {
+          const h = new Date().getHours();
+          const g = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+          speak(`${g}, ${userName}. All systems are operational. How may I assist you?`);
+        }, 600);
+      }, 500);
+      return;
+    }
+    const st = steps[i];
+    $('cp').style.strokeDashoffset = circ - (st.p / 100) * circ;
+    $('cx').textContent = st.p + '%';
+    $('cs').textContent = st.s;
+    $('cu').textContent = st.sub;
+    i++;
+  }, 400);
+}
+
+// ===== MICROPHONE + SPEECH RECOGNITION =====
+async function initMic() {
+  try {
+    micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const actx = new AudioContext();
+    const src = actx.createMediaStreamSource(micStream);
+    analyser = actx.createAnalyser();
+    analyser.fftSize = 2048;
+    waveData = new Uint8Array(analyser.frequencyBinCount);
+    src.connect(analyser);
+    drawWave();
+  } catch(e) { console.warn('Mic denied', e); }
+
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (SR) {
+    recognition = new SR();
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+    recognition.onresult = e => {
+      const last = e.results[e.results.length - 1];
+      if (last.isFinal) {
+        const txt = last[0].transcript.trim();
+        if (txt) handleSpeech(txt);
+      }
+    };
+    recognition.onend = () => { if (state === 'listen') setState('idle'); };
+    recognition.onerror = () => { if (state === 'listen') setState('idle'); };
+  }
+}
+
+// ===== MIC CLICK =====
+$('mic').onclick = () => {
+  audio.resume();
+  if (state === 'idle') startListen();
+  else if (state === 'listen') stopListen();
+  else if (state === 'talk') { synth.cancel(); audio.unduck(); setState('idle'); }
+};
+
+function startListen() {
+  if (!recognition) { alert('Use Chrome or Edge for voice input.'); return; }
+  setState('listen');
+  audio.play('listen');
+  try { recognition.start(); } catch(e) {}
+}
+function stopListen() {
+  try { recognition.stop(); } catch(e) {}
+  setState('idle');
+}
+
+// ===== STATE =====
+function setState(s) {
+  state = s;
+  const mic = $('mic'), sl = $('sl'), wave = $('wave');
+  mic.className = 'mic';
+  sl.className = 'slabel';
+  if (s === 'idle') { sl.textContent = 'TAP TO SPEAK'; wave.classList.remove('on'); }
+  else if (s === 'listen') { mic.classList.add('listen'); sl.classList.add('listen'); sl.textContent = 'LISTENING...'; wave.classList.add('on'); }
+  else if (s === 'proc') { mic.classList.add('proc'); sl.classList.add('proc'); sl.textContent = 'PROCESSING...'; wave.classList.add('on'); }
+  else if (s === 'talk') { mic.classList.add('talk'); sl.classList.add('talk'); sl.textContent = 'SPEAKING...'; wave.classList.add('on'); }
+}
+
+// ===== SPEECH =====
+function speak(text) {
+  if (!synth) return;
+  synth.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'en-GB';
+  u.rate = 0.95;
+  u.pitch = 0.9;
+  u.volume = 1;
+  const voices = synth.getVoices();
+  // Prefer British male voices
+  const preferred = ['Google UK English Male', 'Daniel', 'Google UK English Female', 'Moira', 'Tom', 'Matthew'];
+  for (const name of preferred) {
+    const v = voices.find(v => v.name.includes(name));
+    if (v) { u.voice = v; break; }
+  }
+  setState('talk');
+  audio.duck();
+  audio.play('message');
+  u.onend = () => { audio.play('complete'); audio.unduck(); setState('idle'); };
+  u.onerror = () => { audio.unduck(); setState('idle'); };
+  synth.speak(u);
+}
+if (synth) synth.onvoiceschanged = () => synth.getVoices();
+
+// ===== HANDLE USER SPEECH =====
+async function handleSpeech(text) {
+  addTranscript(userName.toUpperCase(), text);
+  setState('proc');
+  audio.play('processing');
+  try { recognition.stop(); } catch(e) {}
+
+  try {
+    const res = await fetch('/chat/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text, session_id: userName }),
+    });
+    const data = await res.json();
+    const reply = data.reply || data.detail || 'I could not process that.';
+    audio.play('stopProcessing');
+    addTranscript('JARVIS', reply);
+    speak(reply);
+    msgCount++;
+  } catch(e) {
+    audio.play('stopProcessing');
+    audio.play('error');
+    addTranscript('JARVIS', 'Connection error. Please try again.');
+    speak('Connection error. Please try again.');
+  }
+}
+
+// ===== TRANSCRIPT =====
+function addTranscript(who, text) {
+  const box = $('tb');
+  const cls = who === 'JARVIS' ? 'jv' : 'usr';
+  const div = document.createElement('div');
+  div.className = 'tline ' + cls;
+  div.innerHTML = `<div class="w">${who}</div><div class="t">${text}</div>`;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+  while (box.children.length > 20) box.removeChild(box.firstChild);
+}
+</script>
 </body>
 </html>

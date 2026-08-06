@@ -27,6 +27,7 @@ import time
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
+from enum import Enum, auto
 from pathlib import Path
 from typing import Any, Optional
 
@@ -98,7 +99,7 @@ class SessionManager:
         self._settings = settings
         self._sessions: dict[str, Session] = {}
         self._active_session_id: str | None = None
-        self._storage_dir = Path(settings.api.base_url or ".") / "data" / "sessions"
+        self._storage_dir = Path(".") / "data" / "sessions"
 
     def create_session(
         self,

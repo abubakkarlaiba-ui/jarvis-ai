@@ -4,10 +4,20 @@ Health check route — monitors system status.
 
 from __future__ import annotations
 
+from pathlib import Path
 from pydantic import BaseModel, Field
 from fastapi import APIRouter
+from fastapi.responses import HTMLResponse
 
 router = APIRouter(tags=["health"])
+
+_HTML_PATH = Path(__file__).resolve().parent.parent.parent / "ui" / "templates" / "index.html"
+
+
+@router.get("/", response_class=HTMLResponse)
+async def root():
+    """Serve the JARVIS frontend."""
+    return HTMLResponse(content=_HTML_PATH.read_text(encoding="utf-8"))
 
 
 class HealthResponse(BaseModel):

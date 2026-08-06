@@ -22,7 +22,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from jarvis.core.skills.loader import SkillLoader
+from jarvis.core.skills.module import SkillLoader
 from jarvis.core.skills.module import (
     BaseSkill,
     SkillMetadata,

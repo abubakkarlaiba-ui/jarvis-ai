@@ -27,9 +27,9 @@ from jarvis.config import get_settings, get_container
 from jarvis.core.brain.engine import ReasoningEngine
 from jarvis.core.brain.module import BrainModule
 from jarvis.core.voice import VoiceModule
-from jarvis.core.memory import MemoryModule
-from jarvis.core.vision import VisionModule
-from jarvis.core.automation import AutomationModule
+from jarvis.core.memory import MemorySystem as MemoryModule
+from jarvis.core.vision import VisionSystem as VisionModule
+from jarvis.core.automation import AutomationSystem as AutomationModule
 from jarvis.core.skills import SkillRegistry, SkillLoader
 from jarvis.api.middleware import RequestLoggingMiddleware, APIKeyMiddleware
 from jarvis.api.routes import (
@@ -173,9 +173,9 @@ async def lifespan(app: FastAPI):
         await _core.skills.shutdown_all()
     if _core.voice:
         await _core.voice.cleanup()
-    if _core.vision:
+    if _core.vision and hasattr(_core.vision, 'cleanup'):
         await _core.vision.cleanup()
-    if _core.automation:
+    if _core.automation and hasattr(_core.automation, 'cleanup'):
         await _core.automation.cleanup()
     logger.info("JARVIS shutdown complete.")
 
