@@ -377,9 +377,9 @@ class APISettings(BaseSettings):
     model_config = {"env_prefix": "API_"}
 
     host: str = Field(default="0.0.0.0")
-    port: int = Field(default=8000, ge=1024, le=65535)
+    port: int = Field(default_factory=lambda: int(os.environ.get("PORT", 8000)))
     reload: bool = Field(default=False)
-    cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:3000"])
+    cors_origins: list[str] = Field(default_factory=lambda: ["*"])
     api_key: Optional[str] = Field(default=None, description="API authentication key")
 
 
