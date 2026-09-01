@@ -57,3 +57,5 @@ safety-report.json
 # Package
 *.whl
 *.tar.gz
+
+.vercel

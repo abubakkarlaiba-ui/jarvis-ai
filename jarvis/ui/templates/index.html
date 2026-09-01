@@ -3,943 +3,581 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>J.A.R.V.I.S. — Neural Interface v4.0</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<title>J.A.R.V.I.S. — Stark Industries Tactical OS</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&family=Electrolize&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 :root{
---bg-primary:#05070B;--bg-secondary:#0B1017;--bg-tertiary:#0F1923;
---accent-cyan:#00E5FF;--accent-blue:#0066FF;--accent-purple:#7B2FFF;
---accent-ice:#B0F0FF;--accent-silver:#8892A0;
---glass-bg:rgba(11,16,23,0.6);--glass-border:rgba(0,229,255,0.12);
---glass-glow:rgba(0,229,255,0.05);
---text-primary:#E8F0FF;--text-secondary:#6B7A8D;--text-dim:#3A4A5C;
---font-display:'Orbitron',monospace;--font-ui:'Rajdhani',sans-serif;--font-mono:'Share Tech Mono',monospace;
---sidebar-w:72px;--topbar-h:56px;--rightpanel-w:320px;
---ease-out-expo:cubic-bezier(0.16,1,0.3,1);
---ease-spring:cubic-bezier(0.34,1.56,0.64,1);
+--bg:#030608;--bg2:#060A0F;--bg3:#0A1018;
+--blue:#0088FF;--cyan:#00D4FF;--gold:#FFD700;--arc:#00C8FF;
+--red:#FF2040;--green:#00FF88;--orange:#FF8800;--purple:#9B59FF;
+--glass:rgba(0,136,255,0.06);--glass2:rgba(0,212,255,0.08);
+--border:rgba(0,136,255,0.2);--border2:rgba(0,212,255,0.15);
+--text:#C8DEFF;--text2:#607090;--text3:#2A3A50;
+--font:'Orbitron',monospace;--ui:'Rajdhani',sans-serif;--mono:'Share Tech Mono',monospace;
 }
-html,body{width:100%;height:100%;overflow:hidden;background:var(--bg-primary);color:var(--text-primary);font-family:var(--font-ui);-webkit-font-smoothing:antialiased}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--ui)}
 body{position:relative}
+canvas#bgCanvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0}
 
-/* ═══════════════════ CANVAS BACKGROUND ═══════════════════ */
-#bgCanvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
+/* ═══════ HUD OVERLAY ═══════ */
+.hud-overlay{position:fixed;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none}
+.hud-corner{position:absolute;width:80px;height:80px;border:1px solid rgba(0,136,255,0.15)}
+.hud-corner.tl{top:10px;left:10px;border-right:none;border-bottom:none}
+.hud-corner.tr{top:10px;right:10px;border-left:none;border-bottom:none}
+.hud-corner.bl{bottom:10px;left:10px;border-right:none;border-top:none}
+.hud-corner.br{bottom:10px;right:10px;border-left:none;border-top:none}
+.hud-corner::before{content:'';position:absolute;width:8px;height:8px;background:var(--blue);opacity:0.4}
+.hud-corner.tl::before{top:-1px;left:-1px}
+.hud-corner.tr::before{top:-1px;right:-1px}
+.hud-corner.bl::before{bottom:-1px;left:-1px}
+.hud-corner.br::before{bottom:-1px;right:-1px}
 
-/* ═══════════════════ SCANNING BEAM ═══════════════════ */
-.scan-beam{position:fixed;top:0;left:0;width:100%;height:2px;background:linear-gradient(90deg,transparent,var(--accent-cyan),transparent);opacity:0.3;z-index:1;pointer-events:none;animation:scanDown 8s linear infinite}
-@keyframes scanDown{0%{top:-2px}100%{top:100%}}
+.scan-line{position:fixed;top:0;left:0;width:100%;height:2px;background:linear-gradient(90deg,transparent,var(--blue),var(--cyan),var(--blue),transparent);opacity:0.2;z-index:2;pointer-events:none;animation:scanH 6s linear infinite}
+@keyframes scanH{0%{top:-2px}100%{top:100%}}
+.scan-line-v{position:fixed;top:0;left:0;width:2px;height:100%;background:linear-gradient(180deg,transparent,var(--blue),var(--cyan),var(--blue),transparent);opacity:0.1;z-index:2;pointer-events:none;animation:scanV 8s linear infinite}
+@keyframes scanV{0%{left:-2px}100%{left:100%}}
 
-/* ═══════════════════ GLOBAL GLOW ═══════════════════ */
-.global-glow{position:fixed;top:50%;left:50%;width:800px;height:800px;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(0,229,255,0.03) 0%,transparent 70%);z-index:0;pointer-events:none;animation:globalPulse 6s ease-in-out infinite}
-@keyframes globalPulse{0%,100%{opacity:0.5;transform:translate(-50%,-50%) scale(1)}50%{opacity:1;transform:translate(-50%,-50%) scale(1.1)}}
+/* ═══════ LOGIN ═══════ */
+.login-screen{position:fixed;top:0;left:0;width:100%;height:100%;z-index:1000;display:flex;align-items:center;justify-content:center;background:var(--bg);transition:all 1s cubic-bezier(0.16,1,0.3,1)}
+.login-screen.hidden{opacity:0;pointer-events:none;transform:scale(1.1)}
+.login-box{text-align:center;width:500px;max-width:90vw}
+.arc-reactor-login{width:160px;height:160px;margin:0 auto 40px;position:relative}
+.arc-reactor-login svg{width:100%;height:100%;animation:arcSpin 10s linear infinite}
+@keyframes arcSpin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+.arc-glow{position:absolute;top:50%;left:50%;width:200px;height:200px;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(0,200,255,0.15) 0%,transparent 70%);animation:arcPulse 3s ease-in-out infinite;border-radius:50%}
+@keyframes arcPulse{0%,100%{opacity:0.5;transform:translate(-50%,-50%) scale(1)}50%{opacity:1;transform:translate(-50%,-50%) scale(1.2)}}
+.stark-logo{font-family:var(--font);font-size:10px;letter-spacing:8px;color:var(--text2);text-transform:uppercase;margin-bottom:8px}
+.login-title{font-family:var(--font);font-size:36px;font-weight:800;letter-spacing:10px;margin-bottom:4px;background:linear-gradient(135deg,var(--cyan),var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.login-sub{font-size:11px;color:var(--text3);letter-spacing:4px;text-transform:uppercase;margin-bottom:40px;font-family:var(--mono)}
+.login-input{width:100%;padding:16px 20px;background:var(--glass);border:1px solid var(--border);border-radius:2px;color:var(--text);font-family:var(--mono);font-size:14px;outline:none;margin-bottom:16px;letter-spacing:4px;text-align:center;transition:all 0.3s}
+.login-input:focus{border-color:var(--cyan);box-shadow:0 0 30px rgba(0,200,255,0.1),inset 0 0 30px rgba(0,200,255,0.03)}
+.login-input::placeholder{color:var(--text3);letter-spacing:2px}
+.login-btn{width:100%;padding:16px;border:1px solid var(--cyan);border-radius:2px;background:rgba(0,200,255,0.05);color:var(--cyan);font-family:var(--font);font-size:12px;letter-spacing:4px;text-transform:uppercase;cursor:pointer;transition:all 0.3s;position:relative;overflow:hidden}
+.login-btn:hover{background:rgba(0,200,255,0.15);box-shadow:0 0 40px rgba(0,200,255,0.15),inset 0 0 40px rgba(0,200,255,0.05)}
+.login-btn::after{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(0,200,255,0.1),transparent);transition:0.5s}
+.login-btn:hover::after{left:100%}
+.login-or{display:flex;align-items:center;gap:16px;margin:24px 0;color:var(--text3);font-size:10px;letter-spacing:3px;font-family:var(--mono)}
+.login-or::before,.login-or::after{content:'';flex:1;height:1px;background:var(--border)}
+.login-skip{background:transparent;border:1px solid var(--border);color:var(--text2);padding:12px 24px;border-radius:2px;cursor:pointer;font-family:var(--mono);font-size:10px;letter-spacing:3px;text-transform:uppercase;transition:all 0.3s}
+.login-skip:hover{border-color:var(--blue);color:var(--blue)}
 
-/* ═══════════════════ LAYOUT ═══════════════════ */
-.app{position:relative;width:100%;height:100%;display:grid;grid-template-columns:var(--sidebar-w) 1fr var(--rightpanel-w);grid-template-rows:var(--topbar-h) 1fr;grid-template-areas:"sidebar topbar topbar" "sidebar main right";z-index:2}
+/* ═══════ CONNECTION ═══════ */
+.connection-overlay{position:fixed;top:0;left:0;width:100%;height:100%;z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);opacity:0;pointer-events:none;transition:opacity 0.5s}
+.connection-overlay.active{opacity:1;pointer-events:auto}
+.connect-ring{width:180px;height:180px;border:1px solid var(--cyan);border-radius:50%;position:relative;animation:connSpin 2s linear infinite}
+@keyframes connSpin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+.connect-ring::before{content:'';position:absolute;top:-4px;left:50%;width:8px;height:8px;background:var(--cyan);border-radius:50%;box-shadow:0 0 20px var(--cyan)}
+.connect-ring::after{content:'';position:absolute;top:50%;left:-4px;width:8px;height:8px;background:var(--blue);border-radius:50%;box-shadow:0 0 20px var(--blue)}
+.connect-text{font-family:var(--font);font-size:11px;letter-spacing:6px;color:var(--cyan);margin-top:40px;text-transform:uppercase}
+.connect-sub{font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:8px;letter-spacing:2px}
+.connect-progress{width:240px;height:1px;background:rgba(0,200,255,0.1);margin-top:20px;overflow:hidden}
+.connect-progress-bar{height:100%;background:linear-gradient(90deg,var(--blue),var(--cyan));width:0;transition:width 0.3s;box-shadow:0 0 10px var(--cyan)}
 
-/* ═══════════════════ TOP BAR ═══════════════════ */
-.topbar{grid-area:topbar;display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:var(--glass-bg);border-bottom:1px solid var(--glass-border);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);z-index:10}
-.topbar::after{content:'';position:absolute;bottom:0;left:0;width:100%;height:1px;background:linear-gradient(90deg,transparent,var(--accent-cyan),transparent);opacity:0.4}
-.topbar-left{display:flex;align-items:center;gap:24px}
-.topbar-center{display:flex;align-items:center;gap:20px}
-.topbar-right{display:flex;align-items:center;gap:16px}
-.topbar-item{display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:11px;color:var(--text-secondary);letter-spacing:0.5px;text-transform:uppercase}
-.topbar-item .label{color:var(--text-dim);font-size:9px;letter-spacing:1px}
-.topbar-item .value{color:var(--accent-cyan);font-weight:600}
-.topbar-divider{width:1px;height:24px;background:var(--glass-border)}
-.ai-status{display:flex;align-items:center;gap:8px;padding:4px 12px;border-radius:20px;background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.2)}
-.ai-status .dot{width:6px;height:6px;border-radius:50%;background:var(--accent-cyan);animation:statusPulse 2s ease-in-out infinite}
-@keyframes statusPulse{0%,100%{box-shadow:0 0 4px var(--accent-cyan)}50%{box-shadow:0 0 12px var(--accent-cyan),0 0 24px rgba(0,229,255,0.3)}}
-.ai-status .text{font-family:var(--font-mono);font-size:10px;color:var(--accent-cyan);text-transform:uppercase;letter-spacing:1px}
-.profile-btn{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--accent-cyan),var(--accent-blue));display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px solid transparent;transition:all 0.3s var(--ease-out-expo)}
-.profile-btn:hover{border-color:var(--accent-cyan);box-shadow:0 0 20px rgba(0,229,255,0.3)}
-.profile-btn svg{width:16px;height:16px;fill:white}
+/* ═══════ APP LAYOUT ═══════ */
+.app{position:relative;width:100%;height:100%;z-index:2;opacity:0;transition:opacity 0.8s}
+.app.active{opacity:1}
 
-/* ═══════════════════ LEFT SIDEBAR ═══════════════════ */
-.sidebar{grid-area:sidebar;display:flex;flex-direction:column;align-items:center;padding:12px 0;background:var(--glass-bg);border-right:1px solid var(--glass-border);backdrop-filter:blur(20px);z-index:10;overflow:hidden}
-.sidebar::after{content:'';position:absolute;top:0;right:0;width:1px;height:100%;background:linear-gradient(180deg,transparent,var(--accent-cyan),transparent);opacity:0.3}
-.sidebar-logo{width:44px;height:44px;margin-bottom:20px;position:relative;cursor:pointer}
-.sidebar-logo svg{width:100%;height:100%}
-.sidebar-logo .ring{position:absolute;top:-4px;left:-4px;width:52px;height:52px;border:1px solid var(--accent-cyan);border-radius:50%;opacity:0.3;animation:logoSpin 20s linear infinite}
-@keyframes logoSpin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
-.nav-items{display:flex;flex-direction:column;gap:4px;flex:1;width:100%;padding:0 8px}
-.nav-item{width:56px;height:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:12px;cursor:pointer;transition:all 0.3s var(--ease-out-expo);position:relative;gap:2px}
-.nav-item:hover{background:rgba(0,229,255,0.08)}
-.nav-item.active{background:rgba(0,229,255,0.12)}
-.nav-item.active::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:20px;background:var(--accent-cyan);border-radius:0 4px 4px 0}
-.nav-item svg{width:20px;height:20px;stroke:var(--text-secondary);transition:all 0.3s;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
-.nav-item:hover svg,.nav-item.active svg{stroke:var(--accent-cyan);filter:drop-shadow(0 0 6px rgba(0,229,255,0.4))}
-.nav-item .tooltip{position:absolute;left:64px;background:var(--bg-secondary);border:1px solid var(--glass-border);border-radius:8px;padding:6px 12px;font-size:11px;color:var(--text-primary);white-space:nowrap;opacity:0;pointer-events:none;transition:all 0.2s;transform:translateX(-8px);font-family:var(--font-mono);letter-spacing:0.5px}
-.nav-item:hover .tooltip{opacity:1;transform:translateX(0)}
+/* ═══════ TOP HUD ═══════ */
+.top-hud{position:absolute;top:0;left:0;right:0;height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:linear-gradient(180deg,rgba(0,20,40,0.8),transparent);border-bottom:1px solid rgba(0,136,255,0.08);z-index:10}
+.top-left,.top-center,.top-right{display:flex;align-items:center;gap:16px}
+.hud-item{display:flex;flex-direction:column;align-items:center;gap:1px}
+.hud-label{font-family:var(--mono);font-size:8px;color:var(--text3);letter-spacing:2px;text-transform:uppercase}
+.hud-value{font-family:var(--font);font-size:12px;color:var(--cyan);letter-spacing:1px}
+.hud-value.gold{color:var(--gold)}
+.hud-value.green{color:var(--green)}
+.hud-value.red{color:var(--red)}
+.hud-divider{width:1px;height:28px;background:var(--border);opacity:0.3}
+.stark-badge{font-family:var(--font);font-size:8px;color:var(--text3);letter-spacing:3px;border:1px solid rgba(0,136,255,0.15);padding:4px 12px;position:relative}
+.stark-badge::before{content:'';position:absolute;top:-1px;left:-1px;width:4px;height:4px;background:var(--cyan)}
+.stark-badge::after{content:'';position:absolute;bottom:-1px;right:-1px;width:4px;height:4px;background:var(--cyan)}
+.threat-level{display:flex;align-items:center;gap:6px;padding:4px 12px;border:1px solid rgba(0,255,136,0.2);background:rgba(0,255,136,0.03)}
+.threat-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:tPulse 2s infinite}
+@keyframes tPulse{0%,100%{opacity:1}50%{opacity:0.5}}
 
-/* ═══════════════════ MAIN CENTER ═══════════════════ */
-.main{grid-area:main;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden;padding:20px}
+/* ═══════ LEFT PANEL ═══════ */
+.left-panel{position:absolute;top:52px;left:0;width:260px;bottom:0;background:linear-gradient(90deg,rgba(0,10,20,0.6),transparent);border-right:1px solid rgba(0,136,255,0.06);overflow-y:auto;scrollbar-width:none;z-index:5;padding:16px}
+.left-panel::-webkit-scrollbar{display:none}
+.panel-header{font-family:var(--font);font-size:9px;letter-spacing:3px;color:var(--text3);text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.panel-header::after{content:'';flex:1;height:1px;background:var(--border);opacity:0.3}
 
-/* AI Core */
-.ai-core-container{position:relative;width:360px;height:360px;display:flex;align-items:center;justify-content:center;margin-bottom:20px}
-.ai-core{position:relative;width:280px;height:280px}
-.core-orb{position:absolute;top:50%;left:50%;width:120px;height:120px;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle at 30% 30%,rgba(0,229,255,0.3),rgba(0,102,255,0.1),rgba(123,47,255,0.05));box-shadow:0 0 60px rgba(0,229,255,0.2),0 0 120px rgba(0,229,255,0.1),inset 0 0 60px rgba(0,229,255,0.1);animation:corePulse 4s ease-in-out infinite}
-@keyframes corePulse{0%,100%{transform:translate(-50%,-50%) scale(1);box-shadow:0 0 60px rgba(0,229,255,0.2),0 0 120px rgba(0,229,255,0.1)}50%{transform:translate(-50%,-50%) scale(1.05);box-shadow:0 0 80px rgba(0,229,255,0.3),0 0 160px rgba(0,229,255,0.15)}}
-.core-ring{position:absolute;top:50%;left:50%;border-radius:50%;border:1px solid;transform:translate(-50%,-50%)}
-.core-ring.r1{width:160px;height:160px;border-color:rgba(0,229,255,0.2);animation:ringRotate 20s linear infinite}
-.core-ring.r2{width:200px;height:200px;border-color:rgba(0,102,255,0.15);animation:ringRotate 30s linear infinite reverse}
-.core-ring.r3{width:240px;height:240px;border-color:rgba(123,47,255,0.1);animation:ringRotate 40s linear infinite}
-.core-ring.r4{width:280px;height:280px;border-color:rgba(0,229,255,0.05);animation:ringRotate 50s linear infinite reverse}
-@keyframes ringRotate{0%{transform:translate(-50%,-50%) rotate(0deg)}100%{transform:translate(-50%,-50%) rotate(360deg)}}
-.core-ring::before{content:'';position:absolute;top:-3px;left:50%;width:6px;height:6px;background:var(--accent-cyan);border-radius:50%;box-shadow:0 0 10px var(--accent-cyan)}
-.core-ring.r2::before{background:var(--accent-blue);box-shadow:0 0 10px var(--accent-blue)}
-.core-ring.r3::before{background:var(--accent-purple);box-shadow:0 0 10px var(--accent-purple)}
-.core-dots{position:absolute;top:50%;left:50%;width:300px;height:300px;transform:translate(-50%,-50%)}
-.core-dot{position:absolute;width:3px;height:3px;background:var(--accent-cyan);border-radius:50%;opacity:0.6;animation:dotFloat 6s ease-in-out infinite}
-@keyframes dotFloat{0%,100%{opacity:0.3;transform:translateY(0)}50%{opacity:0.8;transform:translateY(-10px)}}
-.particles-orbit{position:absolute;top:50%;left:50%;width:320px;height:320px;transform:translate(-50%,-50%)}
-.orbit-particle{position:absolute;width:2px;height:2px;background:var(--accent-cyan);border-radius:50%;box-shadow:0 0 6px var(--accent-cyan);animation:orbitMove 8s linear infinite}
-@keyframes orbitMove{0%{transform:rotate(0deg) translateX(160px) rotate(0deg)}100%{transform:rotate(360deg) translateX(160px) rotate(-360deg)}}
+/* ═══════ ARC REACTOR CENTER ═══════ */
+.center-area{position:absolute;top:52px;left:260px;right:320px;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.arc-reactor{position:relative;width:400px;height:400px;display:flex;align-items:center;justify-content:center}
+.arc-outer{position:absolute;width:320px;height:320px;border:1px solid rgba(0,200,255,0.15);border-radius:50%;animation:arcOuterSpin 30s linear infinite}
+@keyframes arcOuterSpin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+.arc-outer::before{content:'';position:absolute;top:-3px;left:50%;width:6px;height:6px;background:var(--cyan);border-radius:50%;box-shadow:0 0 12px var(--cyan)}
+.arc-mid{position:absolute;width:240px;height:240px;border:1px solid rgba(0,200,255,0.2);border-radius:50%;animation:arcMidSpin 20s linear infinite reverse}
+@keyframes arcMidSpin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+.arc-mid::before{content:'';position:absolute;top:-2px;left:50%;width:4px;height:4px;background:var(--blue);border-radius:50%;box-shadow:0 0 10px var(--blue)}
+.arc-inner{position:absolute;width:160px;height:160px;border:1px solid rgba(0,200,255,0.25);border-radius:50%;animation:arcInnerSpin 12s linear infinite}
+@keyframes arcInnerSpin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+.arc-inner::before{content:'';position:absolute;top:-2px;left:50%;width:4px;height:4px;background:var(--arc);border-radius:50%;box-shadow:0 0 8px var(--arc)}
+.arc-core{position:absolute;width:80px;height:80px;border-radius:50%;background:radial-gradient(circle at 30% 30%,rgba(0,200,255,0.4),rgba(0,136,255,0.1),transparent);box-shadow:0 0 60px rgba(0,200,255,0.3),0 0 120px rgba(0,200,255,0.15),inset 0 0 40px rgba(0,200,255,0.2);animation:coreGlow 4s ease-in-out infinite}
+@keyframes coreGlow{0%,100%{box-shadow:0 0 60px rgba(0,200,255,0.3),0 0 120px rgba(0,200,255,0.15)}50%{box-shadow:0 0 80px rgba(0,200,255,0.5),0 0 160px rgba(0,200,255,0.25)}}
+.arc-segments{position:absolute;width:280px;height:280px}
+.arc-seg{position:absolute;top:50%;left:50%;width:100%;height:1px;background:linear-gradient(90deg,transparent,rgba(0,200,255,0.15),transparent);transform-origin:left center}
+.arc-dots{position:absolute;width:340px;height:340px}
+.arc-dot{position:absolute;width:2px;height:2px;background:var(--cyan);border-radius:50%;opacity:0.5}
 
-/* AI Core speaking state */
-.ai-core-container.speaking .core-orb{animation:coreSpeak 0.5s ease-in-out infinite alternate}
-@keyframes coreSpeak{0%{transform:translate(-50%,-50%) scale(1);box-shadow:0 0 60px rgba(0,229,255,0.3)}100%{transform:translate(-50%,-50%) scale(1.08);box-shadow:0 0 100px rgba(0,229,255,0.5),0 0 200px rgba(0,229,255,0.2)}}
-.ai-core-container.processing .core-orb{animation:coreProcess 1s ease-in-out infinite}
-@keyframes coreProcess{0%,100%{transform:translate(-50%,-50%) scale(1) rotate(0deg)}50%{transform:translate(-50%,-50%) scale(1.1) rotate(180deg)}}
-.ai-core-container.listening .core-orb{animation:coreListen 1.5s ease-in-out infinite}
-@keyframes coreListen{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:1}50%{transform:translate(-50%,-50%) scale(1.15);opacity:0.8}}
+/* Arc reactor state changes */
+.arc-reactor.speaking .arc-core{animation:coreSpeak 0.5s ease-in-out infinite alternate}
+@keyframes coreSpeak{0%{transform:scale(1);box-shadow:0 0 60px rgba(0,200,255,0.4)}100%{transform:scale(1.15);box-shadow:0 0 100px rgba(0,200,255,0.6),0 0 200px rgba(0,200,255,0.3)}}
+.arc-reactor.processing .arc-core{animation:coreProcess 0.8s ease-in-out infinite}
+@keyframes coreProcess{0%,100%{transform:scale(1) rotate(0deg)}50%{transform:scale(1.2) rotate(180deg)}}
+.arc-reactor.listening .arc-core{animation:coreListen 1.5s ease-in-out infinite}
+@keyframes coreListen{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.3);opacity:0.7}}
 
-/* Status text */
-.ai-status-text{font-family:var(--font-display);font-size:11px;letter-spacing:4px;text-transform:uppercase;color:var(--accent-cyan);text-align:center;margin-bottom:8px;animation:textGlow 3s ease-in-out infinite}
-@keyframes textGlow{0%,100%{text-shadow:0 0 10px rgba(0,229,255,0.5)}50%{text-shadow:0 0 20px rgba(0,229,255,0.8),0 0 40px rgba(0,229,255,0.3)}}
-.ai-name{font-family:var(--font-display);font-size:28px;font-weight:700;letter-spacing:12px;text-transform:uppercase;background:linear-gradient(135deg,var(--accent-cyan),var(--accent-blue),var(--accent-purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-align:center;margin-bottom:4px}
+/* AI Name */
+.ai-label{font-family:var(--font);font-size:10px;letter-spacing:6px;color:var(--text3);text-transform:uppercase;margin-top:20px;text-align:center}
+.ai-name{font-family:var(--font);font-size:32px;font-weight:800;letter-spacing:14px;text-transform:uppercase;background:linear-gradient(135deg,var(--cyan),var(--blue),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-align:center}
+.ai-status-line{font-family:var(--mono);font-size:11px;color:var(--cyan);letter-spacing:3px;text-align:center;margin-top:4px;animation:statusBlink 3s ease-in-out infinite}
+@keyframes statusBlink{0%,100%{opacity:0.6}50%{opacity:1}}
 
-/* ═══════════════════ COMMAND AREA ═══════════════════ */
-.command-area{position:relative;width:100%;max-width:720px;margin-top:10px}
-.command-input-wrap{position:relative;display:flex;align-items:center;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:16px;padding:4px;backdrop-filter:blur(20px);transition:all 0.4s var(--ease-out-expo)}
-.command-input-wrap:focus-within{border-color:rgba(0,229,255,0.4);box-shadow:0 0 30px rgba(0,229,255,0.1),inset 0 0 30px rgba(0,229,255,0.02)}
-.command-input{flex:1;background:transparent;border:none;outline:none;padding:14px 20px;font-family:var(--font-ui);font-size:15px;color:var(--text-primary);letter-spacing:0.5px}
-.command-input::placeholder{color:var(--text-dim)}
-.cmd-btn{width:44px;height:44px;border-radius:12px;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.3s var(--ease-out-expo);position:relative}
-.cmd-btn svg{width:20px;height:20px;stroke:var(--text-secondary);fill:none;stroke-width:1.5;transition:all 0.3s}
-.cmd-btn:hover svg{stroke:var(--accent-cyan);filter:drop-shadow(0 0 8px rgba(0,229,255,0.5))}
-.cmd-btn.mic{background:rgba(0,229,255,0.1);border:1px solid rgba(0,229,255,0.2)}
-.cmd-btn.mic:hover{background:rgba(0,229,255,0.2);box-shadow:0 0 20px rgba(0,229,255,0.2)}
-.cmd-btn.mic.active{background:rgba(0,229,255,0.2);border-color:var(--accent-cyan);animation:micPulse 1.5s ease-in-out infinite}
-@keyframes micPulse{0%,100%{box-shadow:0 0 10px rgba(0,229,255,0.2)}50%{box-shadow:0 0 30px rgba(0,229,255,0.4),0 0 60px rgba(0,229,255,0.1)}}
-.cmd-btn.send{background:linear-gradient(135deg,var(--accent-cyan),var(--accent-blue))}
-.cmd-btn.send:hover{box-shadow:0 0 20px rgba(0,229,255,0.3);transform:scale(1.05)}
-.cmd-btn.send svg{stroke:white}
+/* ═══════ COMMAND BAR ═══════ */
+.cmd-bar{position:absolute;bottom:24px;left:260px;right:320px;padding:0 40px}
+.cmd-wrap{display:flex;align-items:center;background:rgba(0,10,20,0.6);border:1px solid var(--border);backdrop-filter:blur(20px);padding:4px;position:relative}
+.cmd-wrap::before{content:'';position:absolute;top:-1px;left:20%;width:60%;height:1px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);opacity:0.3}
+.cmd-wrap:focus-within{border-color:var(--cyan);box-shadow:0 0 40px rgba(0,200,255,0.08),inset 0 0 40px rgba(0,200,255,0.02)}
+.cmd-input{flex:1;background:transparent;border:none;outline:none;padding:14px 20px;font-family:var(--mono);font-size:14px;color:var(--text);letter-spacing:1px}
+.cmd-input::placeholder{color:var(--text3);letter-spacing:2px}
+.cmd-btn{width:44px;height:44px;border:1px solid var(--border);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.3s;color:var(--text2);margin:0 2px}
+.cmd-btn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5}
+.cmd-btn:hover{border-color:var(--cyan);color:var(--cyan);box-shadow:0 0 20px rgba(0,200,255,0.15)}
+.cmd-btn.mic.active{border-color:var(--cyan);color:var(--cyan);animation:micGlow 1.5s infinite}
+@keyframes micGlow{0%,100%{box-shadow:0 0 10px rgba(0,200,255,0.2)}50%{box-shadow:0 0 30px rgba(0,200,255,0.4),0 0 60px rgba(0,200,255,0.1)}}
+.cmd-btn.send{background:linear-gradient(135deg,var(--blue),var(--cyan));border-color:var(--cyan)}
+.cmd-btn.send:hover{box-shadow:0 0 30px rgba(0,200,255,0.3)}
 
 /* Waveform */
-.waveform{display:flex;align-items:center;justify-content:center;gap:2px;height:24px;padding:0 16px;display:none}
+.waveform{display:none;align-items:center;gap:2px;height:24px;padding:0 12px}
 .waveform.active{display:flex}
-.waveform .bar{width:2px;height:4px;background:var(--accent-cyan);border-radius:2px;animation:waveBar 0.8s ease-in-out infinite}
+.waveform .bar{width:2px;height:4px;background:var(--cyan);border-radius:2px;animation:wave 0.8s ease-in-out infinite}
 .waveform .bar:nth-child(2){animation-delay:0.1s}
 .waveform .bar:nth-child(3){animation-delay:0.2s}
 .waveform .bar:nth-child(4){animation-delay:0.3s}
 .waveform .bar:nth-child(5){animation-delay:0.4s}
-@keyframes waveBar{0%,100%{height:4px}50%{height:20px}}
+@keyframes wave{0%,100%{height:4px}50%{height:20px}}
 
-/* Conversation */
-.conversation{position:absolute;bottom:100%;left:0;width:100%;max-height:50vh;overflow-y:auto;padding:20px;pointer-events:none;scrollbar-width:none}
+/* ═══════ RIGHT PANEL ═══════ */
+.right-panel{position:absolute;top:52px;right:0;width:320px;bottom:0;background:linear-gradient(270deg,rgba(0,10,20,0.6),transparent);border-left:1px solid rgba(0,136,255,0.06);overflow-y:auto;scrollbar-width:none;z-index:5;padding:16px}
+.right-panel::-webkit-scrollbar{display:none}
+
+/* ═══════ HUD CARDS ═══════ */
+.hud-card{background:var(--glass);border:1px solid var(--border);padding:12px;margin-bottom:12px;position:relative;transition:all 0.3s}
+.hud-card::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:var(--cyan);opacity:0.4}
+.hud-card:hover{border-color:var(--cyan);box-shadow:0 0 20px rgba(0,200,255,0.05)}
+.card-title{font-family:var(--font);font-size:8px;letter-spacing:3px;color:var(--text3);text-transform:uppercase;margin-bottom:10px}
+.card-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(0,136,255,0.05)}
+.card-row:last-child{border-bottom:none}
+.card-label{font-family:var(--mono);font-size:10px;color:var(--text2);letter-spacing:1px}
+.card-val{font-family:var(--font);font-size:11px;letter-spacing:1px}
+.card-val.cyan{color:var(--cyan)}
+.card-val.green{color:var(--green)}
+.card-val.gold{color:var(--gold)}
+.card-val.red{color:var(--red)}
+.card-val.blue{color:var(--blue)}
+
+/* Suit selector */
+.suit-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px}
+.suit-item{aspect-ratio:1;border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all 0.3s;gap:2px}
+.suit-item:hover{border-color:var(--cyan);background:rgba(0,200,255,0.05)}
+.suit-item.active{border-color:var(--gold);background:rgba(255,215,0,0.05);box-shadow:0 0 15px rgba(255,215,0,0.1)}
+.suit-item .num{font-family:var(--font);font-size:12px;color:var(--cyan)}
+.suit-item.active .num{color:var(--gold)}
+.suit-item .lbl{font-family:var(--mono);font-size:7px;color:var(--text3);letter-spacing:1px}
+
+/* Weapon bars */
+.weapon-bar{margin-top:8px}
+.weapon-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.weapon-name{font-family:var(--mono);font-size:9px;color:var(--text2);width:80px;letter-spacing:0.5px}
+.weapon-track{flex:1;height:4px;background:rgba(0,136,255,0.1);border-radius:2px;overflow:hidden}
+.weapon-fill{height:100%;border-radius:2px;transition:width 1s}
+.weapon-fill.repulsor{background:linear-gradient(90deg,var(--cyan),var(--blue))}
+.weapon-fill.unibeam{background:linear-gradient(90deg,var(--gold),var(--orange))}
+.weapon-fill.missile{background:linear-gradient(90deg,var(--red),var(--orange))}
+.weapon-fill.laser{background:linear-gradient(90deg,var(--green),var(--cyan))}
+.weapon-pct{font-family:var(--font);font-size:9px;color:var(--cyan);width:30px;text-align:right}
+
+/* Threat map */
+.threat-map{width:100%;aspect-ratio:2/1;background:rgba(0,10,20,0.5);border:1px solid var(--border);margin-top:8px;position:relative;overflow:hidden}
+.threat-map canvas{width:100%;height:100%}
+
+/* Notification */
+.notif-item{display:flex;gap:8px;padding:8px;border:1px solid rgba(0,136,255,0.06);margin-bottom:6px;background:rgba(0,136,255,0.02)}
+.notif-icon{width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.notif-text{font-size:10px;color:var(--text2);line-height:1.4}
+.notif-time{font-family:var(--mono);font-size:8px;color:var(--text3);margin-top:2px}
+
+/* ═══════ CONVERSATION ═══════ */
+.conversation{position:absolute;bottom:80px;left:280px;right:340px;max-height:40vh;overflow-y:auto;padding:20px;scrollbar-width:none;pointer-events:none}
 .conversation::-webkit-scrollbar{display:none}
 .conversation.active{pointer-events:auto}
-.msg{margin-bottom:16px;display:flex;gap:12px;animation:msgIn 0.4s var(--ease-out-expo);opacity:0;animation-fill-mode:forwards}
-@keyframes msgIn{0%{opacity:0;transform:translateY(20px)}100%{opacity:1;transform:translateY(0)}}
+.msg{margin-bottom:16px;display:flex;gap:12px;animation:msgSlide 0.4s cubic-bezier(0.16,1,0.3,1);opacity:0;animation-fill-mode:forwards}
+@keyframes msgSlide{0%{opacity:0;transform:translateY(20px)}100%{opacity:1;transform:translateY(0)}}
 .msg.user{flex-direction:row-reverse}
-.msg-avatar{width:32px;height:32px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px}
-.msg.user .msg-avatar{background:linear-gradient(135deg,var(--accent-blue),var(--accent-purple))}
-.msg.ai .msg-avatar{background:linear-gradient(135deg,var(--accent-cyan),var(--accent-blue))}
-.msg-bubble{max-width:70%;padding:12px 16px;border-radius:16px;font-size:14px;line-height:1.6;backdrop-filter:blur(10px)}
-.msg.user .msg-bubble{background:rgba(0,102,255,0.15);border:1px solid rgba(0,102,255,0.2);border-bottom-right-radius:4px}
-.msg.ai .msg-bubble{background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.12);border-bottom-left-radius:4px}
-.msg-time{font-size:9px;color:var(--text-dim);margin-top:4px;font-family:var(--font-mono)}
+.msg-avatar{width:32px;height:32px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--font);font-size:10px;flex-shrink:0}
+.msg.user .msg-avatar{background:rgba(255,215,0,0.05);border-color:rgba(255,215,0,0.2);color:var(--gold)}
+.msg.ai .msg-avatar{background:rgba(0,200,255,0.05);border-color:rgba(0,200,255,0.2);color:var(--cyan)}
+.msg-content{max-width:70%}
+.msg-bubble{padding:12px 16px;font-size:13px;line-height:1.6;backdrop-filter:blur(10px)}
+.msg.user .msg-bubble{background:rgba(255,215,0,0.05);border:1px solid rgba(255,215,0,0.12)}
+.msg.ai .msg-bubble{background:rgba(0,200,255,0.05);border:1px solid rgba(0,200,255,0.12)}
+.msg-time{font-family:var(--mono);font-size:8px;color:var(--text3);margin-top:4px}
 
-/* ═══════════════════ RIGHT PANEL ═══════════════════ */
-.right-panel{grid-area:right;display:flex;flex-direction:column;background:var(--glass-bg);border-left:1px solid var(--glass-border);backdrop-filter:blur(20px);overflow-y:auto;scrollbar-width:none;z-index:10}
-.right-panel::-webkit-scrollbar{display:none}
-.right-panel::before{content:'';position:absolute;top:0;left:0;width:1px;height:100%;background:linear-gradient(180deg,transparent,var(--accent-cyan),transparent);opacity:0.3}
-.panel-section{padding:20px;border-bottom:1px solid var(--glass-border)}
-.panel-section:last-child{border-bottom:none}
-.panel-title{font-family:var(--font-display);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:14px;display:flex;align-items:center;gap:8px}
-.panel-title::before{content:'';width:12px;height:1px;background:var(--accent-cyan);opacity:0.5}
+/* ═══════ BOTTOM HUD BAR ═══════ */
+.bottom-hud{position:absolute;bottom:0;left:260px;right:320px;height:1px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);opacity:0.2}
 
-/* AI Status Cards */
-.ai-stat{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:10px;background:rgba(0,229,255,0.03);border:1px solid rgba(0,229,255,0.06);margin-bottom:8px;transition:all 0.3s}
-.ai-stat:hover{background:rgba(0,229,255,0.06);border-color:rgba(0,229,255,0.12)}
-.ai-stat .stat-label{font-size:11px;color:var(--text-secondary);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.5px}
-.ai-stat .stat-value{font-size:13px;font-weight:600;font-family:var(--font-mono)}
-.ai-stat .stat-value.cyan{color:var(--accent-cyan)}
-.ai-stat .stat-value.blue{color:var(--accent-blue)}
-.ai-stat .stat-value.purple{color:var(--accent-purple)}
+/* ═══════ RESPONSIVE ═══════ */
+@media(max-width:1200px){.right-panel{display:none}.cmd-bar{right:20px}.conversation{right:20px}}
+@media(max-width:768px){.left-panel{display:none}.cmd-bar{left:20px}.conversation{left:20px}.arc-reactor{width:280px;height:280px}.ai-name{font-size:22px;letter-spacing:8px}}
 
-/* Status indicator */
-.status-row{display:flex;align-items:center;gap:8px;padding:8px 0}
-.status-dot{width:6px;height:6px;border-radius:50%}
-.status-dot.active{background:#00FF88;box-shadow:0 0 8px rgba(0,255,136,0.5)}
-.status-dot.idle{background:#FFB800;box-shadow:0 0 8px rgba(255,184,0,0.5)}
-.status-dot.off{background:#FF4444;box-shadow:0 0 8px rgba(255,68,68,0.5)}
-.status-label{font-size:12px;color:var(--text-secondary)}
-.status-val{font-size:12px;font-family:var(--font-mono);color:var(--accent-cyan);margin-left:auto}
-
-/* Mini chart */
-.mini-chart{height:40px;display:flex;align-items:flex-end;gap:2px;margin-top:8px}
-.mini-chart .bar{flex:1;background:linear-gradient(180deg,var(--accent-cyan),rgba(0,229,255,0.2));border-radius:2px 2px 0 0;transition:height 0.5s var(--ease-out-expo);min-height:2px}
-
-/* Notifications */
-.notif{display:flex;gap:10px;padding:10px;border-radius:10px;background:rgba(0,229,255,0.03);border:1px solid rgba(0,229,255,0.06);margin-bottom:8px}
-.notif-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px}
-.notif-icon.info{background:rgba(0,229,255,0.1)}
-.notif-icon.warn{background:rgba(255,184,0,0.1)}
-.notif-text{font-size:12px;color:var(--text-secondary);line-height:1.4}
-.notif-time{font-size:9px;color:var(--text-dim);font-family:var(--font-mono);margin-top:2px}
-
-/* ═══════════════════ LOGIN SCREEN ═══════════════════ */
-.login-screen{position:fixed;top:0;left:0;width:100%;height:100%;z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg-primary);transition:all 0.8s var(--ease-out-expo)}
-.login-screen.hidden{opacity:0;pointer-events:none;transform:scale(1.05)}
-.login-box{text-align:center;width:400px;max-width:90vw}
-.login-logo{width:100px;height:100px;margin:0 auto 32px;position:relative}
-.login-logo svg{width:100%;height:100%}
-.login-logo .pulse-ring{position:absolute;top:-10px;left:-10px;width:120px;height:120px;border:1px solid var(--accent-cyan);border-radius:50%;opacity:0;animation:loginPulse 3s ease-out infinite}
-@keyframes loginPulse{0%{opacity:0.6;transform:scale(0.8)}100%{opacity:0;transform:scale(1.3)}}
-.login-title{font-family:var(--font-display);font-size:32px;font-weight:700;letter-spacing:8px;margin-bottom:8px;background:linear-gradient(135deg,var(--accent-cyan),var(--accent-blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.login-sub{font-size:12px;color:var(--text-dim);letter-spacing:3px;text-transform:uppercase;margin-bottom:40px;font-family:var(--font-mono)}
-.login-input{width:100%;padding:16px 20px;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:12px;color:var(--text-primary);font-family:var(--font-ui);font-size:15px;outline:none;margin-bottom:16px;transition:all 0.3s}
-.login-input:focus{border-color:rgba(0,229,255,0.4);box-shadow:0 0 20px rgba(0,229,255,0.1)}
-.login-input::placeholder{color:var(--text-dim)}
-.login-btn{width:100%;padding:16px;border:none;border-radius:12px;background:linear-gradient(135deg,var(--accent-cyan),var(--accent-blue));color:white;font-family:var(--font-display);font-size:13px;letter-spacing:3px;text-transform:uppercase;cursor:pointer;transition:all 0.3s var(--ease-out-expo)}
-.login-btn:hover{box-shadow:0 0 30px rgba(0,229,255,0.3);transform:translateY(-2px)}
-.login-or{display:flex;align-items:center;gap:16px;margin:24px 0;color:var(--text-dim);font-size:11px;letter-spacing:2px;text-transform:uppercase;font-family:var(--font-mono)}
-.login-or::before,.login-or::after{content:'';flex:1;height:1px;background:var(--glass-border)}
-.login-skip{background:transparent;border:1px solid var(--glass-border);color:var(--text-secondary);padding:12px 24px;border-radius:10px;cursor:pointer;font-family:var(--font-mono);font-size:11px;letter-spacing:2px;text-transform:uppercase;transition:all 0.3s}
-.login-skip:hover{border-color:var(--accent-cyan);color:var(--accent-cyan)}
-
-/* Connection animation */
-.connection-overlay{position:fixed;top:0;left:0;width:100%;height:100%;z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg-primary);opacity:0;pointer-events:none;transition:opacity 0.5s}
-.connection-overlay.active{opacity:1;pointer-events:auto}
-.connect-ring{width:200px;height:200px;border:2px solid var(--accent-cyan);border-radius:50%;position:relative;animation:connectSpin 3s linear infinite}
-@keyframes connectSpin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
-.connect-ring::before{content:'';position:absolute;top:-6px;left:50%;width:12px;height:12px;background:var(--accent-cyan);border-radius:50%;box-shadow:0 0 20px var(--accent-cyan)}
-.connect-text{font-family:var(--font-display);font-size:12px;letter-spacing:6px;color:var(--accent-cyan);margin-top:32px;text-transform:uppercase}
-.connect-progress{width:200px;height:2px;background:rgba(0,229,255,0.1);border-radius:2px;margin-top:16px;overflow:hidden}
-.connect-progress-bar{height:100%;background:var(--accent-cyan);border-radius:2px;width:0;transition:width 0.3s;box-shadow:0 0 10px var(--accent-cyan)}
-
-/* ═══════════════════ SCROLLBAR ═══════════════════ */
-::-webkit-scrollbar{width:4px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:rgba(0,229,255,0.2);border-radius:4px}
-::-webkit-scrollbar-thumb:hover{background:rgba(0,229,255,0.4)}
-
-/* ═══════════════════ RESPONSIVE ═══════════════════ */
-@media(max-width:1200px){.app{grid-template-columns:var(--sidebar-w) 1fr;grid-template-areas:"sidebar topbar" "sidebar main"}.right-panel{display:none}}
-@media(max-width:768px){.app{grid-template-columns:1fr;grid-template-areas:"topbar" "main"}.sidebar{display:none}.ai-core-container{width:260px;height:260px}.ai-core{width:200px;height:200px}.core-orb{width:80px;height:80px}.ai-name{font-size:22px;letter-spacing:6px}}
-
-/* ═══════════════════ RIPPLE EFFECT ═══════════════════ */
-.ripple{position:absolute;border-radius:50%;background:rgba(0,229,255,0.3);transform:scale(0);animation:rippleAnim 0.6s ease-out;pointer-events:none}
+/* ═══════ RIPPLE ═══════ */
+.ripple{position:absolute;border-radius:50%;background:rgba(0,200,255,0.2);transform:scale(0);animation:rippleAnim 0.6s ease-out;pointer-events:none}
 @keyframes rippleAnim{to{transform:scale(4);opacity:0}}
 </style>
 </head>
 <body>
-
-<!-- Background Canvas -->
 <canvas id="bgCanvas"></canvas>
+<div class="hud-overlay">
+  <div class="hud-corner tl"></div>
+  <div class="hud-corner tr"></div>
+  <div class="hud-corner bl"></div>
+  <div class="hud-corner br"></div>
+</div>
+<div class="scan-line"></div>
+<div class="scan-line-v"></div>
 
-<!-- Global Glow -->
-<div class="global-glow"></div>
-
-<!-- Scanning Beam -->
-<div class="scan-beam"></div>
-
-<!-- Login Screen -->
+<!-- LOGIN -->
 <div class="login-screen" id="loginScreen">
   <div class="login-box">
-    <div class="login-logo">
-      <div class="pulse-ring"></div>
-      <div class="pulse-ring" style="animation-delay:1s"></div>
-      <svg viewBox="0 0 100 100"><defs><linearGradient id="lg1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#00E5FF"/><stop offset="100%" style="stop-color:#0066FF"/></linearGradient></defs><circle cx="50" cy="50" r="45" fill="none" stroke="url(#lg1)" stroke-width="1" opacity="0.3"/><circle cx="50" cy="50" r="35" fill="none" stroke="url(#lg1)" stroke-width="0.5" opacity="0.2"/><circle cx="50" cy="50" r="20" fill="none" stroke="url(#lg1)" stroke-width="1.5"/><circle cx="50" cy="50" r="6" fill="url(#lg1)"/><line x1="50" y1="5" x2="50" y2="25" stroke="url(#lg1)" stroke-width="0.5" opacity="0.5"/><line x1="50" y1="75" x2="50" y2="95" stroke="url(#lg1)" stroke-width="0.5" opacity="0.5"/><line x1="5" y1="50" x2="25" y2="50" stroke="url(#lg1)" stroke-width="0.5" opacity="0.5"/><line x1="75" y1="50" x2="95" y2="50" stroke="url(#lg1)" stroke-width="0.5" opacity="0.5"/></svg>
+    <div class="arc-reactor-login">
+      <div class="arc-glow"></div>
+      <svg viewBox="0 0 160 160">
+        <defs><linearGradient id="arcG" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#00C8FF"/><stop offset="100%" stop-color="#0088FF"/></linearGradient></defs>
+        <circle cx="80" cy="80" r="75" fill="none" stroke="url(#arcG)" stroke-width="0.5" opacity="0.3"/>
+        <circle cx="80" cy="80" r="60" fill="none" stroke="url(#arcG)" stroke-width="0.5" opacity="0.4"/>
+        <circle cx="80" cy="80" r="45" fill="none" stroke="url(#arcG)" stroke-width="0.8" opacity="0.5"/>
+        <circle cx="80" cy="80" r="30" fill="none" stroke="url(#arcG)" stroke-width="1" opacity="0.6"/>
+        <circle cx="80" cy="80" r="15" fill="none" stroke="url(#arcG)" stroke-width="1.5" opacity="0.8"/>
+        <circle cx="80" cy="80" r="5" fill="url(#arcG)" opacity="0.9"/>
+        <line x1="80" y1="5" x2="80" y2="35" stroke="url(#arcG)" stroke-width="0.5" opacity="0.4"/>
+        <line x1="80" y1="125" x2="80" y2="155" stroke="url(#arcG)" stroke-width="0.5" opacity="0.4"/>
+        <line x1="5" y1="80" x2="35" y2="80" stroke="url(#arcG)" stroke-width="0.5" opacity="0.4"/>
+        <line x1="125" y1="80" x2="155" y2="80" stroke="url(#arcG)" stroke-width="0.5" opacity="0.4"/>
+      </svg>
     </div>
+    <div class="stark-logo">STARK INDUSTRIES</div>
     <div class="login-title">J.A.R.V.I.S.</div>
-    <div class="login-sub">Neural Interface v4.0</div>
-    <input type="password" class="login-input" id="passInput" placeholder="Enter Access Code" autocomplete="off">
-    <button class="login-btn" id="loginBtn">Initialize System</button>
-    <div class="login-or"><span>or</span></div>
-    <button class="login-skip" id="skipBtn">Enter Without Authentication</button>
+    <div class="login-sub">TACTICAL OPERATING SYSTEM v4.7</div>
+    <input type="password" class="login-input" id="passInput" placeholder="ENTER ACCESS CODE" autocomplete="off">
+    <button class="login-btn" id="loginBtn">AUTHENTICATE</button>
+    <div class="login-or"><span>BYPASS</span></div>
+    <button class="login-skip" id="skipBtn">ENTER WITHOUT AUTHENTICATION</button>
   </div>
 </div>
 
-<!-- Connection Animation -->
+<!-- CONNECTION -->
 <div class="connection-overlay" id="connectOverlay">
   <div class="connect-ring"></div>
-  <div class="connect-text">Establishing Neural Link</div>
+  <div class="connect-text">Initializing Neural Link</div>
+  <div class="connect-sub">STARK INDUSTRIES — TACTICAL NETWORK</div>
   <div class="connect-progress"><div class="connect-progress-bar" id="connectBar"></div></div>
 </div>
 
-<!-- Main App -->
-<div class="app" id="mainApp" style="opacity:0">
+<!-- APP -->
+<div class="app" id="mainApp">
 
-  <!-- Top Bar -->
-  <div class="topbar">
-    <div class="topbar-left">
-      <div class="topbar-item">
-        <span class="label">SYS</span>
-        <span class="value" id="sysTime">--:--:--</span>
-      </div>
-      <div class="topbar-divider"></div>
-      <div class="topbar-item">
-        <span class="label">DATE</span>
-        <span class="value" id="sysDate">---</span>
-      </div>
-      <div class="topbar-divider"></div>
-      <div class="topbar-item">
-        <span class="label">CPU</span>
-        <span class="value" id="cpuVal">--%</span>
-      </div>
-      <div class="topbar-divider"></div>
-      <div class="topbar-item">
-        <span class="label">GPU</span>
-        <span class="value" id="gpuVal">--%</span>
-      </div>
-      <div class="topbar-divider"></div>
-      <div class="topbar-item">
-        <span class="label">RAM</span>
-        <span class="value" id="ramVal">--%</span>
-      </div>
-      <div class="topbar-divider"></div>
-      <div class="topbar-item">
-        <span class="label">NET</span>
-        <span class="value" id="netVal">--- Mbps</span>
-      </div>
+  <!-- TOP HUD -->
+  <div class="top-hud">
+    <div class="top-left">
+      <div class="stark-badge">STARK INDUSTRIES</div>
+      <div class="hud-divider"></div>
+      <div class="hud-item"><span class="hud-label">SYS TIME</span><span class="hud-value" id="sysTime">--:--:--</span></div>
+      <div class="hud-divider"></div>
+      <div class="hud-item"><span class="hud-label">CPU</span><span class="hud-value" id="cpuVal">--%</span></div>
+      <div class="hud-divider"></div>
+      <div class="hud-item"><span class="hud-label">GPU</span><span class="hud-value" id="gpuVal">--%</span></div>
+      <div class="hud-divider"></div>
+      <div class="hud-item"><span class="hud-label">RAM</span><span class="hud-value" id="ramVal">--%</span></div>
+      <div class="hud-divider"></div>
+      <div class="hud-item"><span class="hud-label">NET</span><span class="hud-value" id="netVal">-- Mbps</span></div>
     </div>
-    <div class="topbar-center">
-      <div class="ai-status">
-        <div class="dot"></div>
-        <div class="text">Neural Active</div>
-      </div>
+    <div class="top-center">
+      <div class="threat-level"><div class="threat-dot"></div><span class="hud-label">THREAT LEVEL: LOW</span></div>
     </div>
-    <div class="topbar-right">
-      <div class="topbar-item">
-        <span class="label">BATT</span>
-        <span class="value" id="battVal">--%</span>
-      </div>
-      <div class="topbar-divider"></div>
-      <div class="topbar-item">
-        <span class="label">PING</span>
-        <span class="value" id="pingVal">--ms</span>
-      </div>
-      <div class="profile-btn">
-        <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-      </div>
+    <div class="top-right">
+      <div class="hud-item"><span class="hud-label">PING</span><span class="hud-value" id="pingVal">--ms</span></div>
+      <div class="hud-divider"></div>
+      <div class="hud-item"><span class="hud-label">BATT</span><span class="hud-value gold" id="battVal">--%</span></div>
+      <div class="hud-divider"></div>
+      <div class="hud-item"><span class="hud-label">SUIT</span><span class="hud-value green" id="suitVal">MARK XLVII</span></div>
     </div>
   </div>
 
-  <!-- Left Sidebar -->
-  <div class="sidebar">
-    <div class="sidebar-logo">
-      <div class="ring"></div>
-      <svg viewBox="0 0 44 44"><defs><linearGradient id="sLogo" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#00E5FF"/><stop offset="100%" style="stop-color:#0066FF"/></linearGradient></defs><circle cx="22" cy="22" r="18" fill="none" stroke="url(#sLogo)" stroke-width="1"/><circle cx="22" cy="22" r="4" fill="url(#sLogo)"/></svg>
+  <!-- LEFT PANEL -->
+  <div class="left-panel">
+    <div class="panel-header">SUIT DIAGNOSTICS</div>
+    <div class="hud-card">
+      <div class="card-title">POWER SYSTEMS</div>
+      <div class="card-row"><span class="card-label">Arc Reactor</span><span class="card-val green">ONLINE</span></div>
+      <div class="card-row"><span class="card-label">Power Output</span><span class="card-val cyan">4.2 GW</span></div>
+      <div class="card-row"><span class="card-label">Efficiency</span><span class="card-val cyan">98.7%</span></div>
+      <div class="card-row"><span class="card-label">Temperature</span><span class="card-val gold">47.2°C</span></div>
+      <div class="card-row"><span class="card-label">Shield Integrity</span><span class="card-val green">100%</span></div>
     </div>
-    <div class="nav-items" id="navItems">
-      <div class="nav-item active" data-page="dashboard"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><div class="tooltip">Dashboard</div></div>
-      <div class="nav-item" data-page="chat"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><div class="tooltip">AI Chat</div></div>
-      <div class="nav-item" data-page="voice"><svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg><div class="tooltip">Voice Assistant</div></div>
-      <div class="nav-item" data-page="auto"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><div class="tooltip">Automation</div></div>
-      <div class="nav-item" data-page="projects"><svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg><div class="tooltip">Projects</div></div>
-      <div class="nav-item" data-page="files"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><div class="tooltip">Files</div></div>
-      <div class="nav-item" data-page="memory"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/><path d="M12 6v6l4 2"/></svg><div class="tooltip">Memory</div></div>
-      <div class="nav-item" data-page="vision"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg><div class="tooltip">Vision</div></div>
-      <div class="nav-item" data-page="agents"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><div class="tooltip">Agents</div></div>
-      <div class="nav-item" data-page="plugins"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg><div class="tooltip">Plugins</div></div>
-      <div class="nav-item" data-page="integrations"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg><div class="tooltip">Integrations</div></div>
-      <div class="nav-item" data-page="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><div class="tooltip">Settings</div></div>
+    <div class="hud-card">
+      <div class="card-title">FLIGHT SYSTEMS</div>
+      <div class="card-row"><span class="card-label">Status</span><span class="card-val green">READY</span></div>
+      <div class="card-row"><span class="card-label">Altitude</span><span class="card-val cyan">0 ft</span></div>
+      <div class="card-row"><span class="card-label">Speed</span><span class="card-val cyan">0 mph</span></div>
+      <div class="card-row"><span class="card-label">Heading</span><span class="card-val cyan">---°</span></div>
+      <div class="card-row"><span class="card-label">Fuel Cell</span><span class="card-val green">100%</span></div>
+    </div>
+    <div class="panel-header">WEAPONS</div>
+    <div class="hud-card">
+      <div class="card-title">WEAPON SYSTEMS</div>
+      <div class="weapon-bar">
+        <div class="weapon-row"><span class="weapon-name">REPULSORS</span><div class="weapon-track"><div class="weapon-fill repulsor" style="width:95%"></div></div><span class="weapon-pct">95%</span></div>
+        <div class="weapon-row"><span class="weapon-name">UNIBEAM</span><div class="weapon-track"><div class="weapon-fill unibeam" style="width:88%"></div></div><span class="weapon-pct">88%</span></div>
+        <div class="weapon-row"><span class="weapon-name">MISSILES</span><div class="weapon-track"><div class="weapon-fill missile" style="width:72%"></div></div><span class="weapon-pct">72%</span></div>
+        <div class="weapon-row"><span class="weapon-name">LASERS</span><div class="weapon-track"><div class="weapon-fill laser" style="width:100%"></div></div><span class="weapon-pct">100%</span></div>
+      </div>
+    </div>
+    <div class="panel-header">COMM SYSTEMS</div>
+    <div class="hud-card">
+      <div class="card-title">COMMUNICATIONS</div>
+      <div class="card-row"><span class="card-label">Bandwidth</span><span class="card-val green">ACTIVE</span></div>
+      <div class="card-row"><span class="card-label">Encryption</span><span class="card-val green">AES-512</span></div>
+      <div class="card-row"><span class="card-label">SAT Link</span><span class="card-val green">CONNECTED</span></div>
+      <div class="card-row"><span class="card-label">Protocol</span><span class="card-val cyan">STARK-NET</span></div>
     </div>
   </div>
 
-  <!-- Main Center -->
-  <div class="main">
-    <!-- Conversation Area -->
+  <!-- CENTER -->
+  <div class="center-area">
     <div class="conversation" id="conversation"></div>
-
-    <!-- AI Core -->
-    <div class="ai-core-container" id="aiCore">
-      <div class="ai-core">
-        <div class="core-orb"></div>
-        <div class="core-ring r1"></div>
-        <div class="core-ring r2"></div>
-        <div class="core-ring r3"></div>
-        <div class="core-ring r4"></div>
-        <div class="core-dots" id="coreDots"></div>
-        <div class="particles-orbit" id="particlesOrbit"></div>
-      </div>
+    <div class="arc-reactor" id="arcReactor">
+      <div class="arc-outer"></div>
+      <div class="arc-mid"></div>
+      <div class="arc-inner"></div>
+      <div class="arc-core"></div>
+      <div class="arc-segments" id="arcSegments"></div>
+      <div class="arc-dots" id="arcDots"></div>
     </div>
-
-    <div class="ai-status-text" id="aiStatusText">Systems Online</div>
+    <div class="ai-label">STARK INDUSTRIES</div>
     <div class="ai-name">J.A.R.V.I.S.</div>
+    <div class="ai-status-line" id="aiStatus">ALL SYSTEMS NOMINAL</div>
+  </div>
 
-    <!-- Command Area -->
-    <div class="command-area">
-      <div class="command-input-wrap">
-        <button class="cmd-btn" id="settingsBtn" title="Settings">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-        </button>
-        <div class="waveform" id="waveform">
-          <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
-        </div>
-        <input type="text" class="command-input" id="cmdInput" placeholder="Ask JARVIS anything..." autocomplete="off">
-        <button class="cmd-btn mic" id="micBtn" title="Voice Input">
-          <svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" stroke="currentColor" fill="none" stroke-width="1.5"/><path d="M19 10v2a7 7 0 0 1-14 0v-2" stroke="currentColor" fill="none" stroke-width="1.5"/><line x1="12" y1="19" x2="12" y2="23" stroke="currentColor" fill="none" stroke-width="1.5"/><line x1="8" y1="23" x2="16" y2="23" stroke="currentColor" fill="none" stroke-width="1.5"/></svg>
-        </button>
-        <button class="cmd-btn send" id="sendBtn" title="Send">
-          <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13" stroke="currentColor" fill="none" stroke-width="2"/><polygon points="22 2 15 22 11 13 2 9 22 2" stroke="currentColor" fill="none" stroke-width="1.5"/></svg>
-        </button>
+  <!-- RIGHT PANEL -->
+  <div class="right-panel">
+    <div class="panel-header">AI STATUS</div>
+    <div class="hud-card">
+      <div class="card-title">NEURAL NETWORK</div>
+      <div class="card-row"><span class="card-label">Model</span><span class="card-val cyan" id="rpModel">Gemini 2.0</span></div>
+      <div class="card-row"><span class="card-label">State</span><span class="card-val green" id="rpState">IDLE</span></div>
+      <div class="card-row"><span class="card-label">Latency</span><span class="card-val gold" id="rpLatency">--ms</span></div>
+      <div class="card-row"><span class="card-label">Tokens</span><span class="card-val cyan" id="rpTokens">0</span></div>
+      <div class="card-row"><span class="card-label">Uptime</span><span class="card-val green" id="rpUptime">00:00:00</span></div>
+    </div>
+    <div class="panel-header">SUITS</div>
+    <div class="hud-card">
+      <div class="card-title">IRON LEGION</div>
+      <div class="suit-grid">
+        <div class="suit-item" data-suit="1"><span class="num">I</span><span class="lbl">MARK</span></div>
+        <div class="suit-item" data-suit="3"><span class="num">III</span><span class="lbl">CRIMSON</span></div>
+        <div class="suit-item" data-suit="5"><span class="num">V</span><span class="lbl">DONGER</span></div>
+        <div class="suit-item" data-suit="7"><span class="num">VII</span><span class="lbl">SILVER</span></div>
+        <div class="suit-item" data-suit="42"><span class="num">XLII</span><span class="lbl">HOMECOMING</span></div>
+        <div class="suit-item active" data-suit="47"><span class="num">XLVII</span><span class="lbl">ULTRON</span></div>
+        <div class="suit-item" data-suit="50"><span class="num">L</span><span class="lbl">PROTON</span></div>
+        <div class="suit-item" data-suit="85"><span class="num">LXXXV</span><span class="lbl">ENDGAME</span></div>
       </div>
     </div>
+    <div class="panel-header">GLOBAL THREATS</div>
+    <div class="hud-card">
+      <div class="card-title">THREAT MATRIX</div>
+      <div class="threat-map"><canvas id="threatCanvas"></canvas></div>
+      <div class="card-row" style="margin-top:8px"><span class="card-label">Scan Status</span><span class="card-val green">ACTIVE</span></div>
+      <div class="card-row"><span class="card-label">Threats Found</span><span class="card-val cyan" id="threatCount">0</span></div>
+    </div>
+    <div class="panel-header">ACTIVITY</div>
+    <div class="hud-card">
+      <div class="card-title">SYSTEM LOG</div>
+      <div id="notifList">
+        <div class="notif-item"><div class="notif-icon" style="color:var(--cyan)">⚡</div><div><div class="notif-text">Neural interface initialized</div><div class="notif-time">Just now</div></div></div>
+        <div class="notif-item"><div class="notif-icon" style="color:var(--green)">✓</div><div><div class="notif-text">All systems operational</div><div class="notif-time">1 min ago</div></div></div>
+        <div class="notif-item"><div class="notif-icon" style="color:var(--gold)">⚡</div><div><div class="notif-text">Arc reactor at full capacity</div><div class="notif-time">2 min ago</div></div></div>
+      </div>
+    </div>
+    <div class="panel-header">REMINDERS</div>
+    <div class="hud-card">
+      <div class="card-title">SCHEDULE</div>
+      <div class="card-row"><span class="card-label">Avengers Briefing</span><span class="card-val gold">14:00</span></div>
+      <div class="card-row"><span class="card-label">Suit Maintenance</span><span class="card-val cyan">16:30</span></div>
+      <div class="card-row"><span class="card-label">Board Meeting</span><span class="card-val cyan">18:00</span></div>
+    </div>
   </div>
 
-  <!-- Right Panel -->
-  <div class="right-panel">
-    <div class="panel-section">
-      <div class="panel-title">AI Status</div>
-      <div class="ai-stat"><span class="stat-label">Model</span><span class="stat-value cyan" id="rpModel">Gemini 2.0 Flash</span></div>
-      <div class="ai-stat"><span class="stat-label">State</span><span class="stat-value blue" id="rpState">Idle</span></div>
-      <div class="ai-stat"><span class="stat-label">Latency</span><span class="stat-value purple" id="rpLatency">--ms</span></div>
-      <div class="ai-stat"><span class="stat-label">Tokens</span><span class="stat-value cyan" id="rpTokens">0</span></div>
-    </div>
-    <div class="panel-section">
-      <div class="panel-title">System Resources</div>
-      <div class="status-row"><div class="status-dot active"></div><span class="status-label">CPU</span><span class="status-val" id="rpCpu">--</span></div>
-      <div class="mini-chart" id="cpuChart"></div>
-      <div class="status-row" style="margin-top:12px"><div class="status-dot active"></div><span class="status-label">Memory</span><span class="status-val" id="rpMem">--</span></div>
-      <div class="mini-chart" id="memChart"></div>
-      <div class="status-row" style="margin-top:12px"><div class="status-dot active"></div><span class="status-label">Network</span><span class="status-val" id="rpNet">--</span></div>
-      <div class="mini-chart" id="netChart"></div>
-    </div>
-    <div class="panel-section">
-      <div class="panel-title">Activity</div>
-      <div class="mini-chart" id="activityChart" style="height:60px"></div>
-    </div>
-    <div class="panel-section">
-      <div class="panel-title">Notifications</div>
-      <div class="notif"><div class="notif-icon info">⚡</div><div><div class="notif-text">Neural interface initialized successfully</div><div class="notif-time">Just now</div></div></div>
-      <div class="notif"><div class="notif-icon info">🔒</div><div><div class="notif-text">Security protocols active</div><div class="notif-time">1 min ago</div></div></div>
-      <div class="notif"><div class="notif-icon warn">⚠</div><div><div class="notif-text">Voice module standby mode</div><div class="notif-time">2 min ago</div></div></div>
+  <!-- CMD BAR -->
+  <div class="cmd-bar">
+    <div class="cmd-wrap">
+      <button class="cmd-btn" id="settingsBtn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+      <div class="waveform" id="waveform"><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div></div>
+      <input type="text" class="cmd-input" id="cmdInput" placeholder="Speak or type a command, Sir..." autocomplete="off">
+      <button class="cmd-btn mic" id="micBtn"><svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
+      <button class="cmd-btn send" id="sendBtn"><svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
     </div>
   </div>
+  <div class="bottom-hud"></div>
 </div>
 
 <script>
-// ═══════════════════════════════════════════════════════════════
-// J.A.R.V.I.S. Neural Interface v4.0 — Core Engine
-// ═══════════════════════════════════════════════════════════════
-
-(function() {
+(function(){
 'use strict';
+const PASS='jarvis';
+const $=s=>document.querySelector(s);
+const $$=s=>document.querySelectorAll(s);
+const canvas=$('#bgCanvas'),ctx=canvas.getContext('2d');
+let w,h,mouseX=0,mouseY=0,audioCtx=null;
+let particles=[],isListening=false,isProcessing=false,isSpeaking=false,messages=[];
+let startTime=Date.now();
 
-// ── CONFIG ──
-const JARVIS_API = window.JARVIS_API_URL || '';
-const PASSCODE = 'jarvis';
-const THEMES = {
-  classic: { accent:'#00E5FF', secondary:'#0066FF', bg:'#05070B' },
-  midnight: { accent:'#8B5CF6', secondary:'#6D28D9', bg:'#030308' },
-  red: { accent:'#FF3366', secondary:'#FF0044', bg:'#080508' },
-  white: { accent:'#E0F0FF', secondary:'#88C8FF', bg:'#0A0E14' }
-};
-let currentTheme = 'classic';
+function resize(){w=canvas.width=window.innerWidth;h=canvas.height=window.innerHeight}
+resize();window.addEventListener('resize',resize);
+document.addEventListener('mousemove',e=>{mouseX=e.clientX;mouseY=e.clientY});
 
-// ── DOM ──
-const $ = s => document.querySelector(s);
-const $$ = s => document.querySelectorAll(s);
-const loginScreen = $('#loginScreen');
-const passInput = $('#passInput');
-const loginBtn = $('#loginBtn');
-const skipBtn = $('#skipBtn');
-const connectOverlay = $('#connectOverlay');
-const connectBar = $('#connectBar');
-const mainApp = $('#mainApp');
-const cmdInput = $('#cmdInput');
-const sendBtn = $('#sendBtn');
-const micBtn = $('#micBtn');
-const conversation = $('#conversation');
-const aiCore = $('#aiCore');
-const aiStatusText = $('#aiStatusText');
-const waveform = $('#waveform');
-const canvas = $('#bgCanvas');
-const ctx = canvas.getContext('2d');
-
-// ── STATE ──
-let isLoggedIn = false;
-let isListening = false;
-let isProcessing = false;
-let isSpeaking = false;
-let messages = [];
-let audioCtx = null;
-let cpuHistory = Array(20).fill(20);
-let memHistory = Array(20).fill(40);
-let netHistory = Array(20).fill(10);
-let activityHistory = Array(30).fill(0);
-
-// ═══════════════════════════════════════════════════
-//  BACKGROUND PARTICLE SYSTEM
-// ═══════════════════════════════════════════════════
-
-let particles = [];
-let connections = [];
-let w, h, mouseX = 0, mouseY = 0;
-
-function resizeCanvas() {
-  w = canvas.width = window.innerWidth;
-  h = canvas.height = window.innerHeight;
+// ═══════ BACKGROUND ═══════
+class Particle{
+  constructor(){this.reset()}
+  reset(){this.x=Math.random()*w;this.y=Math.random()*h;this.vx=(Math.random()-0.5)*0.2;this.vy=(Math.random()-0.5)*0.2;this.size=Math.random()*1.5+0.3;this.alpha=Math.random()*0.4+0.1;this.pulse=Math.random()*Math.PI*2}
+  update(){this.x+=this.vx;this.y+=this.vy;this.pulse+=0.015;const dx=this.x-mouseX,dy=this.y-mouseY,d=Math.sqrt(dx*dx+dy*dy);if(d<120){const f=(120-d)/120*0.015;this.vx+=dx/d*f;this.vy+=dy/d*f}this.vx*=0.99;this.vy*=0.99;if(this.x<0)this.x=w;if(this.x>w)this.x=0;if(this.y<0)this.y=h;if(this.y>h)this.y=0}
+  draw(){const a=this.alpha*(0.6+Math.sin(this.pulse)*0.4);ctx.beginPath();ctx.arc(this.x,this.y,this.size,0,Math.PI*2);ctx.fillStyle=`rgba(0,136,255,${a})`;ctx.fill()}
 }
-resizeCanvas();
-window.addEventListener('resize', resizeCanvas);
-document.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
-
-class Particle {
-  constructor() {
-    this.reset();
-  }
-  reset() {
-    this.x = Math.random() * w;
-    this.y = Math.random() * h;
-    this.vx = (Math.random() - 0.5) * 0.3;
-    this.vy = (Math.random() - 0.5) * 0.3;
-    this.size = Math.random() * 1.5 + 0.5;
-    this.alpha = Math.random() * 0.5 + 0.1;
-    this.pulse = Math.random() * Math.PI * 2;
-  }
-  update() {
-    this.x += this.vx;
-    this.y += this.vy;
-    this.pulse += 0.02;
-    // Mouse repulsion
-    const dx = this.x - mouseX;
-    const dy = this.y - mouseY;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    if (dist < 150) {
-      const force = (150 - dist) / 150 * 0.02;
-      this.vx += dx / dist * force;
-      this.vy += dy / dist * force;
-    }
-    // Damping
-    this.vx *= 0.99;
-    this.vy *= 0.99;
-    // Bounds
-    if (this.x < 0) this.x = w;
-    if (this.x > w) this.x = 0;
-    if (this.y < 0) this.y = h;
-    if (this.y > h) this.y = 0;
-  }
-  draw() {
-    const a = this.alpha * (0.7 + Math.sin(this.pulse) * 0.3);
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(0,229,255,${a})`;
-    ctx.fill();
-  }
+function initParticles(){particles=Array.from({length:Math.min(Math.floor(w*h/15000),120)},()=>new Particle())}
+function drawConns(){for(let i=0;i<particles.length;i++)for(let j=i+1;j<particles.length;j++){const dx=particles[i].x-particles[j].x,dy=particles[i].y-particles[j].y,d=Math.sqrt(dx*dx+dy*dy);if(d<100){ctx.beginPath();ctx.moveTo(particles[i].x,particles[i].y);ctx.lineTo(particles[j].x,particles[j].y);ctx.strokeStyle=`rgba(0,136,255,${(1-d/100)*0.1})`;ctx.lineWidth=0.4;ctx.stroke()}}}
+let gridOff=0,wavePh=0;
+function drawBg(){
+  ctx.fillStyle='rgba(3,6,8,0.12)';ctx.fillRect(0,0,w,h);
+  gridOff=(gridOff+0.15)%60;ctx.strokeStyle='rgba(0,136,255,0.015)';ctx.lineWidth=0.5;
+  for(let x=-60+gridOff;x<w+60;x+=60){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke()}
+  for(let y=-60+gridOff;y<h+60;y+=60){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke()}
+  wavePh+=0.004;
+  for(let i=0;i<3;i++){ctx.beginPath();for(let x=0;x<w;x+=3){const y=h*0.4+i*50+Math.sin(x*0.002+wavePh+i)*25;if(x===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)}ctx.strokeStyle=`rgba(0,136,255,${0.025-i*0.007})`;ctx.lineWidth=0.8;ctx.stroke()}
+  particles.forEach(p=>{p.update();p.draw()});drawConns();
+  requestAnimationFrame(drawBg);
 }
+initParticles();drawBg();
 
-function initParticles() {
-  const count = Math.min(Math.floor((w * h) / 12000), 150);
-  particles = Array.from({ length: count }, () => new Particle());
+// ═══════ ARC REACTOR SEGMENTS ═══════
+(function(){
+  const segs=$('#arcSegments');for(let i=0;i<12;i++){const s=document.createElement('div');s.className='arc-seg';s.style.transform=`translate(-50%,-50%) rotate(${i*30}deg)`;segs.appendChild(s)}
+  const dots=$('#arcDots');for(let i=0;i<20;i++){const d=document.createElement('div');d.className='arc-dot';const a=(i/20)*Math.PI*2,r=130+Math.random()*30;d.style.left=(170+Math.cos(a)*r)+'px';d.style.top=(170+Math.sin(a)*r)+'px';dots.appendChild(d)}
+})();
+
+// ═══════ THREAT MAP ═══════
+(function(){
+  const tc=$('#threatCanvas');if(!tc)return;const tctx=tc.getContext('2d');
+  function drawThreatMap(){tc.width=tc.offsetWidth;tc.height=tc.offsetHeight;const tw=tc.width,th=tc.height;
+    tctx.fillStyle='rgba(0,10,20,0.3)';tctx.fillRect(0,0,tw,th);
+    tctx.strokeStyle='rgba(0,136,255,0.1)';tctx.lineWidth=0.5;
+    for(let x=0;x<tw;x+=20){tctx.beginPath();tctx.moveTo(x,0);tctx.lineTo(x,th);tctx.stroke()}
+    for(let y=0;y<th;y+=20){tctx.beginPath();tctx.moveTo(0,y);tctx.lineTo(tw,y);tctx.stroke()}
+    for(let i=0;i<5;i++){const x=Math.random()*tw,y=Math.random()*th,r=2+Math.random()*3;
+      tctx.beginPath();tctx.arc(x,y,r,0,Math.PI*2);tctx.fillStyle=`rgba(0,255,136,${0.3+Math.random()*0.3})`;tctx.fill();
+      tctx.beginPath();tctx.arc(x,y,r+5,0,Math.PI*2);tctx.strokeStyle='rgba(0,255,136,0.2)';tctx.stroke()}
+    $('#threatCount').textContent=Math.floor(Math.random()*3);
+  }
+  setInterval(drawThreatMap,2000);drawThreatMap();
+})();
+
+// ═══════ AUDIO ═══════
+function initAudio(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)()}
+function tone(f,d,t='sine',v=0.06){initAudio();const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=t;o.frequency.setValueAtTime(f,audioCtx.currentTime);g.gain.setValueAtTime(v,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+d);o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+d)}
+function playClick(){tone(800,0.06,'sine',0.04)}
+function playSend(){tone(1200,0.08);setTimeout(()=>tone(1600,0.08),40)}
+function playReceive(){tone(600,0.12,'sine',0.04);setTimeout(()=>tone(800,0.12,'sine',0.04),70)}
+function playLogin(){[400,500,600,800].forEach((f,i)=>setTimeout(()=>tone(f,0.12,'sine',0.04),i*70))}
+
+// ═══════ LOGIN ═══════
+function doLogin(){
+  const p=$('#passInput').value.trim();
+  if(p&&p!==PASS){$('#passInput').style.borderColor='rgba(255,32,64,0.5)';tone(200,0.15,'square',0.04);setTimeout(()=>$('#passInput').style.borderColor='',1000);return}
+  playLogin();$('#loginScreen').classList.add('hidden');$('#connectOverlay').classList.add('active');
+  let prog=0;const iv=setInterval(()=>{prog+=Math.random()*12+4;if(prog>=100){prog=100;clearInterval(iv);$('#connectOverlay').classList.remove('active');$('#mainApp').classList.add('active');$('#mainApp').style.opacity='1';playStart()}$('#connectBar').style.width=prog+'%'},200);
+}
+function playStart(){tone(400,0.2);setTimeout(()=>tone(600,0.15),80);setTimeout(()=>tone(800,0.2),160)}
+$('#loginBtn').onclick=doLogin;$('#skipBtn').onclick=doLogin;$('#passInput').onkeydown=e=>{if(e.key==='Enter')doLogin()};
+
+// ═══════ METRICS ═══════
+function updateMetrics(){
+  const now=new Date();$('#sysTime').textContent=now.toLocaleTimeString('en-US',{hour12:false});
+  const cpu=15+Math.random()*35,gpu=10+Math.random()*25,ram=40+Math.random()*20,net=80+Math.random()*40,batt=85+Math.random*15,ping=12+Math.random()*30;
+  $('#cpuVal').textContent=cpu.toFixed(0)+'%';$('#gpuVal').textContent=gpu.toFixed(0)+'%';$('#ramVal').textContent=ram.toFixed(0)+'%';$('#netVal').textContent=net.toFixed(0)+' Mbps';$('#battVal').textContent=(85+Math.random()*15).toFixed(0)+'%';$('#pingVal').textContent=ping.toFixed(0)+'ms';
+  const up=Math.floor((Date.now()-startTime)/1000);const h=String(Math.floor(up/3600)).padStart(2,'0');const m=String(Math.floor((up%3600)/60)).padStart(2,'0');const s=String(up%60).padStart(2,'0');$('#rpUptime').textContent=h+':'+m+':'+s;
+}
+setInterval(updateMetrics,1500);updateMetrics();
+
+// ═══════ SUIT SELECT ═══════
+$$('.suit-item').forEach(s=>{s.onclick=()=>{$$('.suit-item').forEach(i=>i.classList.remove('active'));s.classList.add('active');$('#suitVal').textContent='MARK '+s.dataset.suit;playClick()}});
+
+// ═══════ VOICE ═══════
+function setListening(v){isListening=v;$('#micBtn').classList.toggle('active',v);$('#waveform').classList.toggle('active',v);$('#arcReactor').className='arc-reactor'+(v?' listening':'');$('#aiStatus').textContent=v?'LISTENING...':'ALL SYSTEMS NOMINAL';$('#rpState').textContent=v?'LISTENING':'IDLE';if(v)playStart()}
+function setProcessing(v){isProcessing=v;$('#arcReactor').className='arc-reactor'+(v?' processing':'');$('#aiStatus').textContent=v?'PROCESSING...':(isListening?'LISTENING...':'ALL SYSTEMS NOMINAL');$('#rpState').textContent=v?'PROCESSING':(isListening?'LISTENING':'IDLE')}
+function setSpeaking(v){isSpeaking=v;$('#arcReactor').className='arc-reactor'+(v?' speaking':'');$('#aiStatus').textContent=v?'SPEAKING...':'ALL SYSTEMS NOMINAL';$('#rpState').textContent=v?'SPEAKING':'IDLE'}
+
+$('#micBtn').onclick=()=>{if(isListening){setListening(false);return}setListening(true);playClick();setTimeout(()=>{setListening(false);const q=['What time is it?','Tell me a joke','Status report','What suits do you have?','Hello JARVIS','What can you do?','Run diagnostics','What is the weather?'];$('#cmdInput').value=q[Math.floor(Math.random()*q.length)];handleSend()},4000)};
+
+// ═══════ CHAT ═══════
+function addMsg(text,role='user'){const m=document.createElement('div');m.className='msg '+role;const av=document.createElement('div');av.className='msg-avatar';av.textContent=role==='user'?'T':'J';const c=document.createElement('div');c.className='msg-content';const b=document.createElement('div');b.className='msg-bubble';b.innerHTML=text;const t=document.createElement('div');t.className='msg-time';t.textContent=new Date().toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit'});c.appendChild(b);c.appendChild(t);m.appendChild(av);m.appendChild(c);$('#conversation').appendChild(m);$('#conversation').classList.add('active');$('#conversation').scrollTop=$('#conversation').scrollHeight;messages.push({role,text,time:Date.now()})}
+
+async function handleSend(){
+  const text=$('#cmdInput').value.trim();if(!text)return;addMsg(text,'user');$('#cmdInput').value='';playSend();setProcessing(true);
+  const start=Date.now();
+  try{
+    let resp=generateResponse(text);
+    const lat=Date.now()-start;$('#rpLatency').textContent=lat+'ms';$('#rpTokens').textContent=parseInt($('#rpTokens').textContent)+resp.split(' ').length;
+    setProcessing(false);setSpeaking(true);addMsg(resp,'ai');playReceive();
+    setTimeout(()=>setSpeaking(false),Math.min(resp.length*20,5000));
+  }catch(e){setProcessing(false);addMsg('Neural link error: '+e.message,'ai')}
 }
 
-function drawConnections() {
-  const maxDist = 120;
-  for (let i = 0; i < particles.length; i++) {
-    for (let j = i + 1; j < particles.length; j++) {
-      const dx = particles[i].x - particles[j].x;
-      const dy = particles[i].y - particles[j].y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < maxDist) {
-        const a = (1 - dist / maxDist) * 0.15;
-        ctx.beginPath();
-        ctx.moveTo(particles[i].x, particles[i].y);
-        ctx.lineTo(particles[j].x, particles[j].y);
-        ctx.strokeStyle = `rgba(0,229,255,${a})`;
-        ctx.lineWidth = 0.5;
-        ctx.stroke();
-      }
-    }
-  }
-}
-
-// Grid lines
-let gridOffset = 0;
-function drawGrid() {
-  gridOffset = (gridOffset + 0.2) % 50;
-  ctx.strokeStyle = 'rgba(0,229,255,0.02)';
-  ctx.lineWidth = 0.5;
-  for (let x = -50 + gridOffset; x < w + 50; x += 50) {
-    ctx.beginPath();
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x, h);
-    ctx.stroke();
-  }
-  for (let y = -50 + gridOffset; y < h + 50; y += 50) {
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(w, y);
-    ctx.stroke();
-  }
-}
-
-// Energy waves
-let wavePhase = 0;
-function drawWaves() {
-  wavePhase += 0.005;
-  for (let i = 0; i < 3; i++) {
-    ctx.beginPath();
-    const y0 = h * 0.3 + i * 40;
-    for (let x = 0; x < w; x += 4) {
-      const y = y0 + Math.sin(x * 0.003 + wavePhase + i) * 30 * Math.sin(x * 0.001 + wavePhase * 0.5);
-      if (x === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    }
-    ctx.strokeStyle = `rgba(0,229,255,${0.03 - i * 0.008})`;
-    ctx.lineWidth = 1;
-    ctx.stroke();
-  }
-}
-
-function animateBg() {
-  ctx.fillStyle = 'rgba(5,7,11,0.15)';
-  ctx.fillRect(0, 0, w, h);
-  drawGrid();
-  drawWaves();
-  particles.forEach(p => { p.update(); p.draw(); });
-  drawConnections();
-  requestAnimationFrame(animateBg);
-}
-
-initParticles();
-animateBg();
-
-// ═══════════════════════════════════════════════════
-//  CORE DOTS & ORBIT PARTICLES
-// ═══════════════════════════════════════════════════
-
-function initCoreDots() {
-  const container = $('#coreDots');
-  for (let i = 0; i < 12; i++) {
-    const dot = document.createElement('div');
-    dot.className = 'core-dot';
-    const angle = (i / 12) * Math.PI * 2;
-    const r = 80 + Math.random() * 60;
-    dot.style.left = (150 + Math.cos(angle) * r) + 'px';
-    dot.style.top = (150 + Math.sin(angle) * r) + 'px';
-    dot.style.animationDelay = (i * 0.5) + 's';
-    container.appendChild(dot);
-  }
-  const orbit = $('#particlesOrbit');
-  for (let i = 0; i < 8; i++) {
-    const p = document.createElement('div');
-    p.className = 'orbit-particle';
-    p.style.animationDelay = (i * 1) + 's';
-    p.style.animationDuration = (6 + i * 2) + 's';
-    orbit.appendChild(p);
-  }
-}
-initCoreDots();
-
-// ═══════════════════════════════════════════════════
-//  MINI CHARTS
-// ═══════════════════════════════════════════════════
-
-function initCharts() {
-  ['cpuChart','memChart','netChart','activityChart'].forEach(id => {
-    const el = document.getElementById(id);
-    const count = id === 'activityChart' ? 30 : 20;
-    el.innerHTML = '';
-    for (let i = 0; i < count; i++) {
-      const bar = document.createElement('div');
-      bar.className = 'bar';
-      bar.style.height = '2px';
-      el.appendChild(bar);
-    }
-  });
-}
-initCharts();
-
-function updateCharts() {
-  const update = (id, data) => {
-    const bars = document.getElementById(id).children;
-    for (let i = 0; i < bars.length && i < data.length; i++) {
-      bars[i].style.height = Math.max(2, data[i]) + 'px';
-    }
+function generateResponse(input){
+  const q=input.toLowerCase();
+  const responses={
+    'hello':"Good day, Sir. All systems are at your disposal. The Mark XLVII suit is at 100% combat readiness. How may I assist you today?",
+    'hi':"At your service, Sir. Arc reactor output is stable at 4.2 gigawatts. What would you like to discuss?",
+    'time':"The current time is "+new Date().toLocaleTimeString('en-US',{hour12:false})+". All time synchronization protocols are active across the Stark Industries network.",
+    'joke':"Why did the Iron Man suit go to therapy? Because it had too many attachment issues. Humor module: fully operational.",
+    'name':"I am J.A.R.V.I.S. — Just A Rather Very Intelligent System. Created by Tony Stark. Currently running Tactical Operating System version 4.7.",
+    'weather':"Atmospheric sensors are online, Sir. For detailed meteorological data, I recommend connecting to the Stark Industries weather satellite network.",
+    'status':"All systems nominal, Sir. Arc reactor: online. Weapons: armed. Shields: at 100%. No immediate threats detected in the vicinity. The Iron Legion is on standby.",
+    'suit':"The Mark XLVII is currently active, Sir. It features upgraded repulsor technology, enhanced nanotechnology armor plating, and an advanced HUD system. Would you like to switch to another suit from the Iron Legion?",
+    'weapon':"Weapon systems are armed and ready, Sir. Repulsors at 95%, Unibeam at 88%, missiles at 72%, and lasers at 100%. Shall I prepare for combat simulation?",
+    'fly':"Flight systems are ready for takeoff, Sir. Current altitude: ground level. Maximum speed: Mach 3.7. Shall I initiate flight sequence?",
+    'avengers':"The Avengers communication channel is active, Sir. Captain Rogers, Romanoff, and Banner are currently at the compound. Would you like me to open a secure channel?",
+    'help':"I can assist with suit management, weapons systems, flight controls, threat assessment, communications, and general queries. Simply speak your command, Sir.",
+    'diagnostics':"Running full diagnostic... Arc reactor: optimal. Power distribution: nominal. Neural link: stable. All subsystems reporting green. No anomalies detected.",
+    'thank':"You're welcome, Sir. All systems remain at your disposal. Standing by for further instructions.",
+    'bye':"Understood, Sir. I'll keep all systems on standby. Have a productive day.",
+    'who are you':"I am J.A.R.V.I.S., your personal AI assistant, created by Tony Stark of Stark Industries. I manage your suit systems, provide tactical analysis, and assist with daily operations.",
+    'what can you do':"I can manage your Iron Man suits, control weapons systems, monitor threats globally, assist with flight operations, provide tactical analysis, and handle communications. I'm also quite capable at general conversation.",
+    'mark':"The Iron Legion includes: Mark I (original), Mark III (Crimson Dynamo), Mark V (Suitcase), Mark VII (Silver Centurion), Mark XLII (Homecoming), Mark XLVII (current), Mark L (Proton Cannon), and Mark LXXXV (Endgame). Each suit has unique capabilities.",
+    'arc reactor':"The Arc Reactor is operating at peak efficiency, Sir. Output: 4.2 gigawatts. Temperature: 47.2°C. The new element I helped you synthesize is performing beyond expectations.",
+    'friday':"F.R.I.D.A.Y. is your female counterpart AI, Sir. She handles remote suit operations and provides additional tactical support. I handle the primary systems.",
+    'error':"I apologize, Sir. There seems to be a minor system fluctuation. All critical systems remain operational. Would you like me to run a diagnostic?"
   };
-  update('cpuChart', cpuHistory);
-  update('memChart', memHistory);
-  update('netChart', netHistory);
-  update('activityChart', activityHistory);
+  for(const[key,val]of Object.entries(responses)){if(q.includes(key))return val}
+  return "Acknowledged, Sir. Processing your request through the neural network. I'm currently in local tactical mode. For full AI capabilities, connect me to the Gemini API for enhanced intelligence processing. All suit systems remain operational.";
 }
 
-// ═══════════════════════════════════════════════════
-//  SYSTEM METRICS (simulated)
-// ═══════════════════════════════════════════════════
+$('#sendBtn').onclick=handleSend;$('#cmdInput').onkeydown=e=>{if(e.key==='Enter')handleSend()};
 
-function updateMetrics() {
-  const now = new Date();
-  const timeStr = now.toLocaleTimeString('en-US', { hour12: false });
-  const dateStr = now.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
-  $('#sysTime').textContent = timeStr;
-  $('#sysDate').textContent = dateStr;
+// Ripple
+document.addEventListener('click',e=>{const r=document.createElement('div');r.className='ripple';const rect=e.target.getBoundingClientRect();const sz=Math.max(rect.width,rect.height)*2;r.style.width=r.style.height=sz+'px';r.style.left=(e.clientX-rect.left-sz/2)+'px';r.style.top=(e.clientY-rect.top-sz/2)+'px';e.target.style.position=e.target.style.position||'relative';e.target.style.overflow='hidden';e.target.appendChild(r);setTimeout(()=>r.remove(),600)});
 
-  const cpu = 15 + Math.random() * 35;
-  const gpu = 10 + Math.random() * 25;
-  const ram = 40 + Math.random() * 20;
-  const net = 80 + Math.random() * 40;
-  const batt = 85 + Math.random() * 15;
-  const ping = 12 + Math.random() * 30;
-
-  $('#cpuVal').textContent = cpu.toFixed(0) + '%';
-  $('#gpuVal').textContent = gpu.toFixed(0) + '%';
-  $('#ramVal').textContent = ram.toFixed(0) + '%';
-  $('#netVal').textContent = net.toFixed(0) + ' Mbps';
-  $('#battVal').textContent = batt.toFixed(0) + '%';
-  $('#pingVal').textContent = ping.toFixed(0) + 'ms';
-
-  $('#rpCpu').textContent = cpu.toFixed(0) + '%';
-  $('#rpMem').textContent = ram.toFixed(0) + '%';
-  $('#rpNet').textContent = net.toFixed(0) + ' Mbps';
-
-  cpuHistory.shift(); cpuHistory.push(cpu * 1.5);
-  memHistory.shift(); memHistory.push(ram * 1.5);
-  netHistory.shift(); netHistory.push(net * 1.2);
-  activityHistory.shift(); activityHistory.push(isProcessing ? 50 + Math.random() * 30 : isSpeaking ? 30 + Math.random() * 20 : Math.random() * 15);
-
-  updateCharts();
-}
-setInterval(updateMetrics, 1500);
-updateMetrics();
-
-// ═══════════════════════════════════════════════════
-//  AUDIO SYSTEM
-// ═══════════════════════════════════════════════════
-
-function initAudio() {
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-}
-
-function playTone(freq, duration, type = 'sine', vol = 0.1) {
-  initAudio();
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.type = type;
-  osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-  gain.gain.setValueAtTime(vol, audioCtx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
-  osc.start();
-  osc.stop(audioCtx.currentTime + duration);
-}
-
-function playClick() { playTone(800, 0.08, 'sine', 0.05); }
-function playSend() { playTone(1200, 0.1, 'sine', 0.05); setTimeout(() => playTone(1600, 0.1, 'sine', 0.05), 50); }
-function playReceive() { playTone(600, 0.15, 'sine', 0.04); setTimeout(() => playTone(800, 0.15, 'sine', 0.04), 80); }
-function playStart() { playTone(400, 0.3, 'sine', 0.06); setTimeout(() => playTone(600, 0.2, 'sine', 0.06), 100); setTimeout(() => playTone(800, 0.3, 'sine', 0.06), 200); }
-function playLogin() { [400,500,600,800].forEach((f,i) => setTimeout(() => playTone(f, 0.15, 'sine', 0.04), i * 80)); }
-
-// ═══════════════════════════════════════════════════
-//  LOGIN / CONNECTION
-// ═══════════════════════════════════════════════════
-
-function doLogin() {
-  const pass = passInput.value.trim();
-  if (pass && pass !== PASSCODE) {
-    passInput.style.borderColor = 'rgba(255,68,68,0.5)';
-    playTone(200, 0.2, 'square', 0.05);
-    setTimeout(() => passInput.style.borderColor = '', 1000);
-    return;
-  }
-  playLogin();
-  loginScreen.classList.add('hidden');
-  connectOverlay.classList.add('active');
-  let progress = 0;
-  const interval = setInterval(() => {
-    progress += Math.random() * 15 + 5;
-    if (progress >= 100) {
-      progress = 100;
-      clearInterval(interval);
-      connectOverlay.classList.remove('active');
-      mainApp.style.opacity = '1';
-      mainApp.style.transition = 'opacity 0.8s';
-      isLoggedIn = true;
-      playStart();
-    }
-    connectBar.style.width = progress + '%';
-  }, 200);
-}
-
-loginBtn.addEventListener('click', doLogin);
-skipBtn.addEventListener('click', doLogin);
-passInput.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
-
-// ═══════════════════════════════════════════════════
-//  NAVIGATION
-// ═══════════════════════════════════════════════════
-
-$$('.nav-item').forEach(item => {
-  item.addEventListener('click', () => {
-    $$('.nav-item').forEach(i => i.classList.remove('active'));
-    item.classList.add('active');
-    playClick();
-  });
-});
-
-// ═══════════════════════════════════════════════════
-//  RIPPLE EFFECT
-// ═══════════════════════════════════════════════════
-
-document.addEventListener('click', e => {
-  const ripple = document.createElement('div');
-  ripple.className = 'ripple';
-  const rect = e.target.getBoundingClientRect();
-  const size = Math.max(rect.width, rect.height) * 2;
-  ripple.style.width = ripple.style.height = size + 'px';
-  ripple.style.left = (e.clientX - rect.left - size / 2) + 'px';
-  ripple.style.top = (e.clientY - rect.top - size / 2) + 'px';
-  e.target.style.position = e.target.style.position || 'relative';
-  e.target.style.overflow = 'hidden';
-  e.target.appendChild(ripple);
-  setTimeout(() => ripple.remove(), 600);
-});
-
-// ═══════════════════════════════════════════════════
-//  VOICE MODE
-// ═══════════════════════════════════════════════════
-
-function setListening(state) {
-  isListening = state;
-  micBtn.classList.toggle('active', state);
-  waveform.classList.toggle('active', state);
-  aiCore.className = 'ai-core-container' + (state ? ' listening' : '');
-  aiStatusText.textContent = state ? 'Listening...' : 'Systems Online';
-  $('#rpState').textContent = state ? 'Listening' : 'Idle';
-  if (state) playStart();
-}
-
-function setProcessing(state) {
-  isProcessing = state;
-  aiCore.className = 'ai-core-container' + (state ? ' processing' : '');
-  aiStatusText.textContent = state ? 'Processing...' : (isListening ? 'Listening...' : 'Systems Online');
-  $('#rpState').textContent = state ? 'Processing' : (isListening ? 'Listening' : 'Idle');
-}
-
-function setSpeaking(state) {
-  isSpeaking = state;
-  aiCore.className = 'ai-core-container' + (state ? ' speaking' : '');
-  aiStatusText.textContent = state ? 'Speaking...' : 'Systems Online';
-  $('#rpState').textContent = state ? 'Speaking' : 'Idle';
-}
-
-micBtn.addEventListener('click', () => {
-  if (isListening) {
-    setListening(false);
-    return;
-  }
-  setListening(true);
-  playClick();
-  // Simulate listening for 5 seconds
-  setTimeout(() => {
-    setListening(false);
-    const fakeQueries = ['What time is it?','Tell me a joke','What is the weather?','How are you?','What can you do?'];
-    const q = fakeQueries[Math.floor(Math.random() * fakeQueries.length)];
-    cmdInput.value = q;
-    handleSend();
-  }, 4000);
-});
-
-// ═══════════════════════════════════════════════════
-//  CHAT / COMMAND
-// ═══════════════════════════════════════════════════
-
-function addMessage(text, role = 'user') {
-  const msg = document.createElement('div');
-  msg.className = 'msg ' + role;
-  const avatar = document.createElement('div');
-  avatar.className = 'msg-avatar';
-  avatar.textContent = role === 'user' ? 'U' : 'J';
-  const bubble = document.createElement('div');
-  bubble.className = 'msg-bubble';
-  bubble.innerHTML = text;
-  const time = document.createElement('div');
-  time.className = 'msg-time';
-  time.textContent = new Date().toLocaleTimeString('en-US', { hour12: false, hour:'2-digit', minute:'2-digit' });
-  const content = document.createElement('div');
-  content.appendChild(bubble);
-  content.appendChild(time);
-  msg.appendChild(avatar);
-  msg.appendChild(content);
-  conversation.appendChild(msg);
-  conversation.classList.add('active');
-  conversation.scrollTop = conversation.scrollHeight;
-  messages.push({ role, text, time: Date.now() });
-}
-
-async function handleSend() {
-  const text = cmdInput.value.trim();
-  if (!text) return;
-
-  addMessage(text, 'user');
-  cmdInput.value = '';
-  playSend();
-  setProcessing(true);
-
-  const startTime = Date.now();
-
-  try {
-    let response;
-    if (JARVIS_API) {
-      const res = await fetch(JARVIS_API + '/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: text,
-          conversation_history: messages.slice(-10).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.text }))
-        })
-      });
-      const data = await res.json();
-      response = data.response || data.message || "I couldn't process that request.";
-    } else {
-      response = generateFallback(text);
-    }
-
-    const latency = Date.now() - startTime;
-    $('#rpLatency').textContent = latency + 'ms';
-    const tokens = response.split(' ').length;
-    $('#rpTokens').textContent = parseInt($('#rpTokens').textContent) + tokens;
-
-    setProcessing(false);
-    setSpeaking(true);
-    addMessage(response, 'ai');
-    playReceive();
-
-    setTimeout(() => setSpeaking(false), Math.min(response.length * 25, 5000));
-  } catch (err) {
-    setProcessing(false);
-    addMessage('Neural link error: ' + err.message, 'ai');
-  }
-}
-
-function generateFallback(input) {
-  const q = input.toLowerCase();
-  if (q.includes('hello') || q.includes('hi ') || q === 'hi') return "Hello. I'm JARVIS, your neural interface assistant. How can I assist you today?";
-  if (q.includes('time')) return "The current system time is " + new Date().toLocaleTimeString('en-US', { hour12: false }) + ". All time synchronization protocols are active.";
-  if (q.includes('weather')) return "Atmospheric monitoring systems are online. For real-time weather data, I'll need API integration. Current conditions: nominal.";
-  if (q.includes('joke')) return "Why do programmers prefer dark mode? Because light attracts bugs. Humor module: loaded.";
-  if (q.includes('name')) return "I am J.A.R.V.I.S. — Just A Rather Very Intelligent System. Neural Interface version 4.0.";
-  if (q.includes('what can you do') || q.includes('capabilities')) return "I can assist with: system monitoring, voice commands, task automation, file management, project oversight, and intelligent conversation. All modules are operational.";
-  if (q.includes('thank')) return "You're welcome. All systems remain at your disposal.";
-  if (q.includes('help')) return "I'm here to help. You can ask me anything — from system status to general knowledge. Try voice commands by clicking the microphone.";
-  return "Acknowledged. Processing your request through neural pathways. I'm currently running in local mode. Connect me to the Gemini API for full intelligence capabilities.";
-}
-
-sendBtn.addEventListener('click', handleSend);
-cmdInput.addEventListener('keydown', e => { if (e.key === 'Enter') handleSend(); });
-
-// ═══════════════════════════════════════════════════
-//  INITIALIZE
-// ═══════════════════════════════════════════════════
-
-// Focus login
-setTimeout(() => passInput.focus(), 500);
-
+setTimeout(()=>$('#passInput').focus(),500);
 })();
 </script>
 </body>
