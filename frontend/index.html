@@ -112,16 +112,16 @@ canvas#bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0}
 .stark-badge::after{content:'';position:absolute;bottom:-1px;right:-1px;width:3px;height:3px;background:var(--cyan)}
 
 /* ═══════ MAIN ═══════ */
-.main{grid-area:main;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.main{grid-area:main;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;padding-bottom:10px}
 
 /* ═══════ ARC REACTOR ═══════ */
-.arc-wrap{position:relative;width:420px;height:420px;display:flex;align-items:center;justify-content:center}
+.arc-wrap{position:relative;width:300px;height:300px;display:flex;align-items:center;justify-content:center;z-index:5;margin-bottom:10px}
 .arc-ring{position:absolute;top:50%;left:50%;border-radius:50%;border:1px solid;transform:translate(-50%,-50%)}
-.arc-ring.a1{width:380px;height:380px;border-color:rgba(0,212,255,0.06);animation:aSpin 40s linear infinite}
-.arc-ring.a2{width:320px;height:320px;border-color:rgba(0,136,255,0.08);animation:aSpin 30s linear infinite reverse}
-.arc-ring.a3{width:260px;height:260px;border-color:rgba(0,212,255,0.1);animation:aSpin 22s linear infinite}
-.arc-ring.a4{width:200px;height:200px;border-color:rgba(0,136,255,0.12);animation:aSpin 16s linear infinite reverse}
-.arc-ring.a5{width:140px;height:140px;border-color:rgba(0,212,255,0.16);animation:aSpin 10s linear infinite}
+.arc-ring.a1{width:300px;height:300px;border-color:rgba(0,212,255,0.06);animation:aSpin 40s linear infinite}
+.arc-ring.a2{width:250px;height:250px;border-color:rgba(0,136,255,0.08);animation:aSpin 30s linear infinite reverse}
+.arc-ring.a3{width:200px;height:200px;border-color:rgba(0,212,255,0.1);animation:aSpin 22s linear infinite}
+.arc-ring.a4{width:160px;height:160px;border-color:rgba(0,136,255,0.12);animation:aSpin 16s linear infinite reverse}
+.arc-ring.a5{width:120px;height:120px;border-color:rgba(0,212,255,0.16);animation:aSpin 10s linear infinite}
 .arc-ring.a6{width:90px;height:90px;border-color:rgba(0,200,255,0.2);animation:aSpin 6s linear infinite reverse}
 @keyframes aSpin{0%{transform:translate(-50%,-50%) rotate(0)}100%{transform:translate(-50%,-50%) rotate(360deg)}}
 .arc-ring::before{content:'';position:absolute;top:-2px;left:50%;width:4px;height:4px;border-radius:50%}
@@ -131,13 +131,13 @@ canvas#bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0}
 .arc-ring.a4::before{background:var(--cyan);box-shadow:0 0 6px var(--cyan)}
 .arc-ring.a5::before{background:var(--blue);box-shadow:0 0 5px var(--blue)}
 .arc-ring.a6::before{background:var(--arc);box-shadow:0 0 5px var(--arc)}
-.arc-core{position:absolute;width:50px;height:50px;border-radius:50%;background:radial-gradient(circle at 35% 35%,rgba(0,212,255,0.5),rgba(0,136,255,0.2),rgba(0,200,255,0.05));box-shadow:0 0 50px rgba(0,212,255,0.3),0 0 100px rgba(0,200,255,0.15),inset 0 0 30px rgba(0,212,255,0.2);animation:cGlow 4s ease-in-out infinite}
+.arc-core{position:absolute;width:80px;height:80px;border-radius:50%;background:radial-gradient(circle at 35% 35%,rgba(0,212,255,0.7),rgba(0,136,255,0.35),rgba(0,200,255,0.12));box-shadow:0 0 70px rgba(0,212,255,0.5),0 0 140px rgba(0,200,255,0.25),0 0 200px rgba(0,136,255,0.1),inset 0 0 50px rgba(0,212,255,0.3);animation:cGlow 4s ease-in-out infinite}
 @keyframes cGlow{0%,100%{box-shadow:0 0 50px rgba(0,212,255,0.3),0 0 100px rgba(0,200,255,0.15)}50%{box-shadow:0 0 80px rgba(0,212,255,0.5),0 0 160px rgba(0,200,255,0.25)}}
-.arc-lines{position:absolute;width:400px;height:400px}
+.arc-lines{position:absolute;width:320px;height:320px}
 .arc-line{position:absolute;top:50%;left:50%;width:50%;height:1px;background:linear-gradient(90deg,transparent,rgba(0,212,255,0.08),transparent);transform-origin:left center}
-.arc-orbit{position:absolute;width:360px;height:360px}
+.arc-orbit{position:absolute;width:280px;height:280px}
 .orbit-p{position:absolute;width:3px;height:3px;background:var(--cyan);border-radius:50%;box-shadow:0 0 8px var(--cyan);animation:oMove 10s linear infinite}
-@keyframes oMove{0%{transform:rotate(0deg) translateX(180px) rotate(0deg)}100%{transform:rotate(360deg) translateX(180px) rotate(-360deg)}}
+@keyframes oMove{0%{transform:rotate(0deg) translateX(140px) rotate(0deg)}100%{transform:rotate(360deg) translateX(140px) rotate(-360deg)}}
 
 /* State changes */
 .arc-wrap.speaking .arc-core{animation:cSpeak .5s ease-in-out infinite alternate}
@@ -147,9 +147,10 @@ canvas#bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0}
 .arc-wrap.listening .arc-core{animation:cListen 1.5s ease-in-out infinite}
 @keyframes cListen{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.35);opacity:.6}}
 
-.ai-label{font-family:var(--font);font-size:8px;letter-spacing:8px;color:var(--text2);text-transform:uppercase;margin-top:24px;text-align:center}
-.ai-name{font-family:var(--font);font-size:36px;font-weight:900;letter-spacing:16px;background:linear-gradient(135deg,var(--cyan),var(--blue),var(--arc));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-align:center}
-.ai-status{font-family:var(--mono);font-size:11px;color:var(--cyan);letter-spacing:4px;text-align:center;margin-top:4px;animation:sBlink 3s ease-in-out infinite}
+.ai-label{font-family:var(--font);font-size:8px;letter-spacing:8px;color:var(--text2);text-transform:uppercase;margin-top:16px;text-align:center}
+.ai-name{font-family:var(--font);font-size:48px;font-weight:900;letter-spacing:20px;background:linear-gradient(135deg,var(--cyan),var(--blue),var(--arc));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-align:center;position:relative}
+.ai-name::after{content:'J.A.R.V.I.S.';position:absolute;top:0;left:0;width:100%;background:linear-gradient(135deg,var(--cyan),var(--blue),var(--arc));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:blur(20px);opacity:.3;z-index:-1}
+.ai-status{font-family:var(--mono);font-size:12px;color:var(--cyan);letter-spacing:5px;text-align:center;margin-top:6px;animation:sBlink 3s ease-in-out infinite}
 @keyframes sBlink{0%,100%{opacity:.5}50%{opacity:1}}
 
 /* ═══════ DEVICE CONTROL PANEL ═══════ */
@@ -252,7 +253,7 @@ canvas#bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0}
 @media(max-width:768px){.sidebar{display:none}.app{grid-template-columns:1fr;grid-template-areas:"topbar" "main" "cmd"}.device-panel{display:none}.arc-wrap{width:280px;height:280px}.ai-name{font-size:24px;letter-spacing:8px}}
 
 /* ═══════ HOLOGRAPHIC PROJECTION ═══════ */
-.holo-proj{position:absolute;top:50%;right:80px;transform:translateY(-50%);width:200px;height:200px;perspective:600px;pointer-events:none}
+.holo-proj{position:absolute;top:16%;right:40px;width:160px;height:160px;perspective:600px;pointer-events:none;opacity:.6}
 .holo-cube{width:100%;height:100%;position:relative;transform-style:preserve-3d;animation:cubeSpin 15s linear infinite}
 @keyframes cubeSpin{0%{transform:rotateX(-20deg) rotateY(0)}100%{transform:rotateX(-20deg) rotateY(360deg)}}
 .holo-face{position:absolute;width:120px;height:120px;top:40px;left:40px;border:1px solid rgba(0,212,255,0.1);background:rgba(0,212,255,0.02);backdrop-filter:blur(4px)}
@@ -555,12 +556,33 @@ function playRecv(){tn(600,.1,'sine',.03);setTimeout(()=>tn(800,.1,'sine',.03),6
 function playLogin(){[400,500,600,800].forEach((f,i)=>setTimeout(()=>tn(f,.1,'sine',.03),i*60))}
 function playStart(){tn(400,.15);setTimeout(()=>tn(600,.12),60);setTimeout(()=>tn(800,.15),120)}
 
+// ═══════ TEXT TO SPEECH ═══════
+function jarvisSpeak(text){
+  if(!('speechSynthesis' in window))return;
+  window.speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text);
+  u.lang='en-GB';u.rate=0.95;u.pitch=0.85;u.volume=1;
+  const voices=window.speechSynthesis.getVoices();
+  const preferred=['Google UK English Male','Daniel','Microsoft David','Microsoft Mark','Alex','en-GB'];
+  for(const name of preferred){const v=voices.find(v=>v.name.includes(name));if(v){u.voice=v;break}}
+  window.speechSynthesis.speak(u);
+}
+// Load voices
+if('speechSynthesis' in window){speechSynthesis.onvoiceschanged=()=>speechSynthesis.getVoices()}
+
 // ═══════ LOGIN ═══════
 function doLogin(){
   const p=$('#passInp').value.trim();
   if(p&&p!==PASS){$('#passInp').style.borderColor='rgba(255,32,64,.5)';tn(200,.12,'square',.03);setTimeout(()=>$('#passInp').style.borderColor='',1000);return}
   playLogin();$('#loginScr').classList.add('out');$('#connScr').classList.add('on');
-  let pr=0;const iv=setInterval(()=>{pr+=Math.random()*10+3;if(pr>=100){pr=100;clearInterval(iv);$('#connScr').classList.remove('on');$('#app').classList.add('on')}$('#connFill').style.width=pr+'%'},180);
+  let pr=0;const iv=setInterval(()=>{pr+=Math.random()*10+3;if(pr>=100){pr=100;clearInterval(iv);$('#connScr').classList.remove('on');$('#app').classList.add('on');
+    // Greeting
+    setTimeout(()=>{
+      addMsg("Good day, Sir. I am J.A.R.V.I.S., your personal AI assistant. All systems are online and operational. Arc reactor at full capacity. How may I be of service today?",'ai');
+      jarvisSpeak("Good day, Sir. I am J.A.R.V.I.S., your personal AI assistant. All systems are online and operational. How may I be of service today?");
+      playRecv();
+    },800);
+  }$('#connFill').style.width=pr+'%'},180);
 }
 $('#loginBtn').onclick=doLogin;$('#skipBtn').onclick=doLogin;$('#passInp').onkeydown=e=>{if(e.key==='Enter')doLogin()};
 
@@ -607,48 +629,52 @@ function addNotif(text){
 async function handleSend(){
   const text=$('#cmdInp').value.trim();if(!text)return;addMsg(text,'user');$('#cmdInp').value='';playSend();setProc(true);
   // Check device control first
-  if(controlDevice(text)){setTimeout(()=>{setProc(false);setSpeak(true);addMsg("Device command executed, Sir. All changes have been applied to the Stark network.",'ai');playRecv();setTimeout(()=>setSpeak(false),2000)},800);return}
+  if(controlDevice(text)){const reply="Device command executed, Sir. All changes have been applied to the Stark network.";setTimeout(()=>{setProc(false);setSpeak(true);addMsg(reply,'ai');playRecv();jarvisSpeak(reply);setTimeout(()=>setSpeak(false),3000)},800);return}
   const start=Date.now();
   try{
     let resp=genResp(text);const lat=Date.now()-start;$('#rpLat').textContent=lat+'ms';$('#rpTok').textContent=parseInt($('#rpTok').textContent)+resp.split(' ').length;
-    setProc(false);setSpeak(true);addMsg(resp,'ai');playRecv();setTimeout(()=>setSpeak(false),Math.min(resp.length*18,5000));
+    setProc(false);setSpeak(true);addMsg(resp,'ai');playRecv();jarvisSpeak(resp);setTimeout(()=>setSpeak(false),Math.min(resp.length*20,6000));
   }catch(e){setProc(false);addMsg('Neural link error: '+e.message,'ai')}
 }
 
 function genResp(input){
   const q=input.toLowerCase();
   const R={
-    'hello':"Good day, Sir. Arc reactor at full capacity. All Iron Legion suits on standby. How may I assist you today?",
-    'hi':"At your service, Sir. Systems are nominal. What would you like me to handle?",
-    'time':"Current system time: "+new Date().toLocaleTimeString('en-US',{hour12:false})+". All Stark network time syncs are active.",
-    'joke':"Why did Tony Stark install a AI in his fridge? Because he wanted cool responses. Humor module: fully operational, Sir.",
-    'name':"I am J.A.R.V.I.S. — Just A Rather Very Intelligent System. Created by Tony Stark. Tactical OS version 4.7.",
-    'weather':"Atmospheric sensors nominal, Sir. For live weather data, connect me to the Stark Industries satellite network.",
-    'status':"All systems operational, Sir. Arc reactor: online. Weapons: armed. Shields: 100%. Iron Legion: on standby. No immediate threats detected.",
-    'suit':"The Mark XLVII is active, Sir. Nano-tech armor, upgraded repulsors, advanced HUD. The Iron Legion includes Mark I through LXXXV. Shall I deploy another suit?",
-    'weapon':"All weapon systems armed, Sir. Repulsors 95%, Unibeam 88%, Missiles 72%, Lasers 100%. Ready for combat deployment.",
-    'fly':"Flight systems: ready. Ground level, max speed Mach 3.7. Shall I initiate takeoff sequence?",
-    'avengers':"Avengers comm channel active, Sir. Rogers, Romanoff, and Banner are at the compound. Shall I open a secure channel?",
-    'help':"I can manage suits, weapons, flight, threats, communications, and control all Stark-connected devices. Just speak your command.",
-    'diagnostics':"Running full diagnostic... All subsystems green. No anomalies. Arc reactor efficiency: 98.7%.",
-    'thank':"My pleasure, Sir. All systems remain at your command.",
-    'bye':"Understood. All systems on standby. Have a productive day, Sir.",
-    'lights':"Adjusting lighting systems, Sir. All Stark facilities lighting is under your control.",
+    'hello':"Hello Sir. It's good to see you. All systems are online and ready. Arc reactor at full capacity. How may I assist you today?",
+    'hi':"Hello Sir. At your service. What would you like me to handle today?",
+    'hey':"Hello Sir. How may I be of assistance? All Stark systems are operational.",
+    'time':"The current time is "+new Date().toLocaleTimeString('en-US',{hour12:false})+", Sir. All time synchronization protocols are active across the network.",
+    'joke':"Why did Tony Stark install an AI in his fridge? Because he wanted cool responses. Humor module fully operational, Sir.",
+    'name':"I am J.A.R.V.I.S. — Just A Rather Very Intelligent System. Created by Tony Stark. At your service, Sir.",
+    'weather':"Atmospheric sensors are nominal, Sir. For live weather data, I recommend connecting to the Stark Industries satellite network.",
+    'status':"All systems are operational, Sir. Arc reactor online, weapons armed, shields at one hundred percent. The Iron Legion is on standby. No immediate threats detected.",
+    'suit':"The Mark XLVII is currently active, Sir. Nano-tech armor, upgraded repulsors, and advanced HUD systems. The full Iron Legion is available for deployment.",
+    'weapon':"All weapon systems are armed and ready, Sir. Repulsors at ninety-five percent, Unibeam at eighty-eight, missiles at seventy-two, lasers at full capacity.",
+    'fly':"Flight systems are ready for takeoff, Sir. Shall I initiate the flight sequence?",
+    'avengers':"The Avengers communication channel is active, Sir. Shall I open a secure line to the compound?",
+    'help':"I can manage your suits, weapons, flight systems, threat detection, communications, and control all connected devices. Simply speak your command, Sir.",
+    'diagnostics':"Running full diagnostic scan, Sir. All subsystems reporting green. Arc reactor efficiency at ninety-eight point seven percent. No anomalies detected.",
+    'thank':"You're welcome, Sir. All systems remain at your command.",
+    'bye':"Understood, Sir. I'll keep all systems on standby. Have a productive day.",
+    'lights':"Adjusting lighting systems, Sir. All facilities lighting is under your control.",
     'door':"Security systems engaged, Sir. All entry points are monitored and controllable.",
-    'camera':"Surveillance systems online, Sir. Camera feeds are accessible through the tactical network.",
+    'camera':"Surveillance systems are online, Sir. Camera feeds accessible through the tactical network.",
     'garage':"Garage door systems connected, Sir. Ready for your command.",
-    'music':"Audio systems online, Sir. Shall I play something from the Stark library?",
-    'coffee':"I'm afraid I can't physically make coffee, Sir. But I can remind Pepper to have some ready.",
-    'friday':"F.R.I.D.A.Y. is your remote operations AI, Sir. I handle primary systems. She manages remote suits.",
-    'arc reactor':"Arc reactor output: 4.2 GW. Efficiency: 98.7%. Temperature: 47.2°C. The new element synthesis is performing optimally.",
-    'iron legion':"The Iron Legion is on standby, Sir. 35 autonomous suits ready for deployment. Mark I through LXXXV all combat-ready.",
-    'combat':"Combat mode available, Sir. Shall I activate full weapon systems and deploy shields?"
+    'music':"Audio systems are online, Sir. Shall I play something from the library?",
+    'coffee':"I'm afraid I cannot physically make coffee, Sir. But I can have Pepper notified.",
+    'friday':"F.R.I.D.A.Y. is your remote operations AI, Sir. I handle primary systems while she manages remote suits.",
+    'arc reactor':"Arc reactor output is four point two gigawatts, Sir. Efficiency at ninety-eight point seven percent. All systems nominal.",
+    'iron legion':"The Iron Legion is on standby, Sir. Thirty-five autonomous suits ready for deployment.",
+    'combat':"Combat mode available, Sir. Shall I activate full weapon systems and deploy shields?",
+    'who are you':"I am J.A.R.V.I.S., Sir. Your personal AI assistant created by Tony Stark. I manage your suit systems, provide tactical analysis, and assist with all operations.",
+    'what can you do':"I can manage suits, weapons, flight, threats, communications, and control all Stark-connected devices. I'm also quite capable at general conversation, Sir.",
+    'good morning':"Good morning, Sir. I trust you slept well. All systems are operational and ready for the day.",
+    'good night':"Good night, Sir. I'll keep watch over all systems. Sleep well."
   };
   for(const[k,v]of Object.entries(R)){if(q.includes(k))return v}
-  // Device control keywords
-  if(q.includes('turn on')||q.includes('activate')||q.includes('enable'))return "Command acknowledged, Sir. Adjusting systems as requested. All Stark devices are responding.";
+  if(q.includes('turn on')||q.includes('activate')||q.includes('enable'))return "Command acknowledged, Sir. Adjusting systems as requested. All devices are responding.";
   if(q.includes('turn off')||q.includes('deactivate')||q.includes('disable'))return "Systems adjusted, Sir. Device states have been modified on the Stark network.";
-  return "Acknowledged, Sir. Processing through the neural network. Currently in local tactical mode. Connect me to Gemini API for full intelligence. All suit and device systems remain operational.";
+  return "Acknowledged, Sir. Processing your request through the neural network. All suit and device systems remain operational. How else may I assist you?";
 }
 
 $('#sendBtn').onclick=handleSend;$('#cmdInp').onkeydown=e=>{if(e.key==='Enter')handleSend()};
